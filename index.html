@@ -1144,11 +1144,28 @@
   ];
   screen2Required.forEach(function (pair) { clearErrorOnInput(pair[0], pair[1]); });
 
+  /** @return {boolean} true when every required screen-2 field is filled. */
   function validateScreen2() {
+    var ok = true;
     screen2Required.forEach(function (pair) {
-      var value = document.getElementById(pair[0]).value.trim();
-      setError(pair[0], pair[1], value === '');
+      var isEmpty = document.getElementById(pair[0]).value.trim() === '';
+      setError(pair[0], pair[1], isEmpty);
+      if (isEmpty) ok = false;
     });
+    return ok;
+  }
+
+  /**
+   * Brings the first highlighted field on a screen into view and focuses it.
+   * @param {string} screenKey
+   * @return {void}
+   */
+  function scrollToFirstError(screenKey) {
+    var wrap = document.querySelector('.screen[data-screen="' + screenKey + '"] .has-error');
+    if (!wrap) return;
+    wrap.scrollIntoView({ behavior: 'auto', block: 'center' });
+    var input = wrap.querySelector('input, select, textarea');
+    if (input) input.focus({ preventScroll: true });
   }
 
   // Return-method reveal
@@ -1295,7 +1312,9 @@
     updatePill();
   }
 
+  /** @return {boolean} true when every card row has at least one of Year / Set / Card # / Player. */
   function validateScreen4() {
+    var ok = true;
     rowsContainer.querySelectorAll('.row-card').forEach(function (row) {
       var id = row.getAttribute('data-row-id');
       var anyFilled = ['year', 'brand', 'cardnum', 'player'].some(function (key) {
@@ -1308,7 +1327,9 @@
         var f = document.getElementById('row-' + id + '-' + key);
         if (f) { var wrap = f.closest('.field'); if (wrap) wrap.classList.toggle('has-error', !anyFilled); }
       });
+      if (!anyFilled) ok = false;
     });
+    return ok;
   }
 
   // ---- Screen 5: signature -----------------------------------------------
@@ -1481,11 +1502,35 @@
     }
   }
 
+  /**
+   * Earliest screen holding a field the server rejected, or '5' when none of them is on an
+   * earlier screen. TEST v1 2026-09-27: empty card rows (screen 4) were rejected while the
+   * customer was on screen 5, where the highlights could not be seen.
+   * @param {string[]} fields Server field paths, e.g. 'contact.email', 'cards[2]'.
+   * @return {string}
+   */
+  function screenForRejectedFields(fields) {
+    var hasContact = fields.some(function (p) { return p.indexOf('contact.') === 0 || p === 'vaultNumber'; });
+    if (hasContact) return '2';
+    var hasCard = fields.some(function (p) { return /^cards\[\d+\]/.test(p); });
+    if (hasCard) return '4';
+    return '5';
+  }
+
   function handleSubmitError(res) {
+    var fields = Array.isArray(res.fields) ? res.fields : [];
+    fields.forEach(mapFieldError);
+    var target = screenForRejectedFields(fields);
+    if (target !== '5') {
+      // The field's own error text explains it there; a banner left on screen 5 would still show
+      // after the customer fixes the field and comes back.
+      showView(target);
+      scrollToFirstError(target);
+      return;
+    }
     var banner = document.getElementById('submit-error');
     banner.textContent = res.message || ERROR_MESSAGES[res.error] || ERROR_MESSAGES.server;
     banner.hidden = false;
-    if (Array.isArray(res.fields)) res.fields.forEach(mapFieldError);
     banner.scrollIntoView({ behavior: 'auto', block: 'center' });
   }
 
@@ -1737,13 +1782,19 @@
   document.getElementById('btn-start').addEventListener('click', function () { showView('2'); });
 
   document.getElementById('btn-back-2').addEventListener('click', function () { showView('1'); });
-  document.getElementById('btn-continue-2').addEventListener('click', function () { validateScreen2(); showView('3'); });
+  document.getElementById('btn-continue-2').addEventListener('click', function () {
+    if (!validateScreen2()) { scrollToFirstError('2'); return; }
+    showView('3');
+  });
 
   document.getElementById('btn-back-3').addEventListener('click', function () { showView('2'); });
   document.getElementById('btn-continue-3').addEventListener('click', function () { showView('4'); });
 
   document.getElementById('btn-back-4').addEventListener('click', function () { showView('3'); });
-  document.getElementById('btn-continue-4').addEventListener('click', function () { validateScreen4(); showView('5'); });
+  document.getElementById('btn-continue-4').addEventListener('click', function () {
+    if (!validateScreen4()) { scrollToFirstError('4'); return; }
+    showView('5');
+  });
 
   document.getElementById('btn-back-5').addEventListener('click', function () { showView('4'); });
 
