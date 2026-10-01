@@ -414,32 +414,20 @@
     margin-bottom: 18px;
   }
 
-  .cards-table-wrap {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
+  .cards-table { margin-top: 12px; }
 
-  .cards-table {
-    min-width: 1070px;
-    margin-top: 12px;
-  }
-
+  /* One row per card: # | card description (one open box) | three cost basis boxes | remove.
+     The six card-info boxes are now one, so the row fits without sideways scrolling. */
   .row-head-grid,
   .row-card {
-    /* Set and Player get the widest columns (9/30: at 115px "Pokemon Base Set" was cut off). */
-    grid-template-columns: 28px 58px minmax(140px, 1.6fr) 80px minmax(140px, 1.6fr) minmax(90px, 1fr) 80px 112px 70px 70px 70px 28px;
-    gap: 5px;
+    grid-template-columns: 28px minmax(0, 1fr) repeat(3, 112px) 28px;
+    column-gap: 10px;
   }
 
-  /* Header lives outside the horizontally-scrolling wrapper so position:sticky
-     tracks the viewport (any overflow:auto ancestor blocks sticky-to-viewport).
-     Its own overflow:hidden clips the wide inner grid, which JS shifts with
-     translateX to stay in sync with the body's horizontal scroll position. */
   .row-head {
     position: sticky;
     top: 96px;
     z-index: 2;
-    overflow: hidden;
     background: var(--color-bg);
     padding-bottom: 8px;
   }
@@ -448,12 +436,33 @@
     display: grid;
     align-items: end;
     padding: 0 12px;
-    min-width: 1070px;
     font-size: 11px;
     font-weight: 700;
     color: var(--color-ink-muted);
     text-transform: uppercase;
     letter-spacing: 0.02em;
+  }
+  .head-desc { display: block; }
+  .head-guide {
+    display: block;
+    margin-top: 2px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  /* "Cost basis" spans the three price columns; its labels sit right above the boxes. */
+  .head-cost {
+    grid-column: 3 / span 3;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: 10px;
+    row-gap: 4px;
+  }
+  .head-cost-title {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding-bottom: 3px;
+    border-bottom: 1px solid var(--color-border);
   }
 
   .row-card {
@@ -466,6 +475,9 @@
     padding: 10px 12px;
     margin-bottom: 8px;
   }
+  /* The three price boxes are direct columns of the row on wide screens. */
+  .cost-basis { display: contents; }
+  .cost-basis-legend { display: none; }
 
   .row-num-cell {
     font-size: 13px;
@@ -478,13 +490,12 @@
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
   }
-  .row-card .field input,
-  .row-card .field select {
+  .row-card .field input {
     padding: 8px 8px;
     font-size: 13px;
   }
-  /* The row's only error sits on one line below the boxes (the Year column alone is too narrow
-     for it); the row grows at the bottom so the boxes stay in line. */
+  /* The row's only error sits on one line below the boxes; the row grows at the bottom so the
+     boxes stay in line. */
   .row-card .field { position: relative; }
   .row-card .field-error { position: absolute; left: 0; top: 100%; margin-top: 4px; font-size: 11px; white-space: nowrap; }
   .row-card:has(.field-error:not([hidden])) { padding-bottom: 28px; }
@@ -502,14 +513,41 @@
   }
   .row-remove:hover { color: var(--color-danger); border-color: var(--color-danger); }
 
-  .scroll-hint {
-    display: none;
-    font-size: 12px;
-    color: var(--color-ink-muted);
-    margin: 8px 2px 0;
-  }
-  @media (max-width: 1023px) {
-    .scroll-hint { display: block; }
+  /* Narrow screens: the description takes the full row, the three cost basis boxes share one
+     row below it, and each box carries its own visible label instead of the column header. */
+  @media (max-width: 719px) {
+    .row-head { position: static; padding-bottom: 6px; }
+    .head-cost { display: none; }
+    .row-head-grid { display: block; }
+    .row-head-spacer { display: none; }
+    .row-card { grid-template-columns: minmax(0, 1fr) 28px; row-gap: 8px; }
+    .row-num-cell { grid-column: 1; grid-row: 1; text-align: left; }
+    .row-remove { grid-column: 2; grid-row: 1; }
+    .row-card .field-desc { grid-column: 1 / -1; grid-row: 2; }
+    .cost-basis {
+      display: grid;
+      grid-column: 1 / -1;
+      grid-row: 3;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      column-gap: 8px;
+    }
+    .cost-basis-legend {
+      display: block;
+      grid-column: 1 / -1;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--color-ink-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+      margin-bottom: 4px;
+    }
+    .cost-basis .field-label {
+      position: static; width: auto; height: auto; margin: 0 0 3px; clip: auto;
+      overflow: visible; white-space: normal;
+      font-size: 11px; font-weight: 600; text-transform: none; letter-spacing: 0;
+    }
+    .row-card .field-error { position: static; white-space: normal; }
+    .row-card:has(.field-error:not([hidden])) { padding-bottom: 10px; }
   }
 
   .add-row-wrap { margin: 6px 0 10px; }
@@ -874,26 +912,20 @@
 
       <div class="row-head" id="row-head" aria-hidden="true">
         <div class="row-head-grid">
-          <span></span>
-          <span>Year</span>
-          <span>Set / Subset</span>
-          <span>Card #</span>
-          <span>Player / Character</span>
-          <span>Color / Variation</span>
-          <span>Serial #</span>
-          <span>Service</span>
-          <span>Your cost ($)</span>
-          <span>Raw comp ($)</span>
-          <span>Graded comp ($)</span>
-          <span></span>
+          <span class="row-head-spacer"></span>
+          <span class="head-desc">Card description<span class="head-guide">Year &middot; Set/Subset &middot; Card # &middot; Player/Character &middot; Color/Variation &middot; Serial #</span></span>
+          <div class="head-cost">
+            <span class="head-cost-title">Cost basis</span>
+            <span>Your cost ($)</span>
+            <span>Raw comp ($)</span>
+            <span>Graded comp ($)</span>
+          </div>
+          <span class="row-head-spacer"></span>
         </div>
       </div>
-      <div class="cards-table-wrap" id="cards-table-wrap">
-        <div class="cards-table">
-          <div id="rows-container"></div>
-        </div>
+      <div class="cards-table">
+        <div id="rows-container"></div>
       </div>
-      <p class="scroll-hint">Scroll sideways to see all columns.</p>
 
       <div class="add-row-wrap">
         <button type="button" class="btn btn-secondary" id="btn-add-row">+ Add another card</button>
@@ -1190,12 +1222,6 @@
   var addRowBtn = document.getElementById('btn-add-row');
   var pill = document.getElementById('row-count-pill');
 
-  var cardsTableWrap = document.getElementById('cards-table-wrap');
-  var rowHeadGrid = document.querySelector('.row-head-grid');
-  cardsTableWrap.addEventListener('scroll', function () {
-    rowHeadGrid.style.transform = 'translateX(-' + cardsTableWrap.scrollLeft + 'px)';
-  });
-
   function escapeAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -1203,13 +1229,7 @@
 
   function rowTemplate(id, opts) {
     opts = opts || {};
-    var year = opts.year || '';
-    var brand = opts.brand || '';
-    var cardNum = opts.cardNum || '';
-    var player = opts.player || '';
-    var parallel = opts.parallel || '';
-    var serial = opts.serial || '';
-    var service = opts.service || 'standard';
+    var description = opts.description || '';
     var cost = opts.cost || '';
     var rawComp = opts.rawComp || '';
     var gradedComp = opts.gradedComp || '';
@@ -1217,38 +1237,25 @@
     var html = '';
     html += '<div class="row-card" id="row-' + id + '" data-row-id="' + id + '">';
     html += '  <span class="row-num-cell" id="row-' + id + '-num"></span>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-year">Year</label><input type="text" id="row-' + id + '-year" value="' + escapeAttr(year) + '"><span class="field-error" id="row-' + id + '-year-err" hidden>Please fill in at least one of Year / Set / Card # / Player.</span></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-brand">Set / Subset</label><input type="text" id="row-' + id + '-brand" value="' + escapeAttr(brand) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-cardnum">Card #</label><input type="text" id="row-' + id + '-cardnum" value="' + escapeAttr(cardNum) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-player">Player / Character</label><input type="text" id="row-' + id + '-player" value="' + escapeAttr(player) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-parallel">Color / Variation (optional)</label><input type="text" id="row-' + id + '-parallel" value="' + escapeAttr(parallel) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-serial">Serial # (optional)</label><input type="text" id="row-' + id + '-serial" value="' + escapeAttr(serial) + '" placeholder="e.g. 23/99"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-service">Service</label><select id="row-' + id + '-service">';
-    html += '    <option value="standard"' + (service === 'standard' ? ' selected' : '') + '>STANDARD</option>';
-    html += '    <option value="elite"' + (service === 'elite' ? ' selected' : '') + '>ELITE</option>';
-    html += '    <option value="premium"' + (service === 'premium' ? ' selected' : '') + '>PREMIUM</option>';
-    html += '    <option value="rush"' + (service === 'rush' ? ' selected' : '') + '>RUSH</option>';
-    html += '  </select></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-cost">Your cost ($, optional)</label><input type="text" id="row-' + id + '-cost" value="' + escapeAttr(cost) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-rawcomp">Raw comp ($, optional)</label><input type="text" id="row-' + id + '-rawcomp" value="' + escapeAttr(rawComp) + '"></div>';
-    html += '  <div class="field"><label class="field-label" for="row-' + id + '-gradedcomp">Graded comp ($, optional)</label><input type="text" id="row-' + id + '-gradedcomp" value="' + escapeAttr(gradedComp) + '"></div>';
+    html += '  <div class="field field-desc"><label class="field-label" for="row-' + id + '-desc">Card description</label><input type="text" id="row-' + id + '-desc" value="' + escapeAttr(description) + '" placeholder="e.g. 2024 Topps Chrome #150 Player Name Gold Refractor 23/50" maxlength="200"><span class="field-error" id="row-' + id + '-desc-err" hidden>Describe the card</span></div>';
+    html += '  <div class="cost-basis">';
+    html += '    <span class="cost-basis-legend">Cost basis (optional)</span>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-cost">Your cost ($)</label><input type="text" id="row-' + id + '-cost" value="' + escapeAttr(cost) + '"></div>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-rawcomp">Raw comp ($)</label><input type="text" id="row-' + id + '-rawcomp" value="' + escapeAttr(rawComp) + '"></div>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-gradedcomp">Graded comp ($)</label><input type="text" id="row-' + id + '-gradedcomp" value="' + escapeAttr(gradedComp) + '"></div>';
+    html += '  </div>';
     html += '  <button type="button" class="row-remove" id="row-' + id + '-remove" aria-label="Remove card">&times;</button>';
     html += '</div>';
     return html;
   }
 
-  function clearRowErrorIfAnyFilled(id) {
-    var anyFilled = ['year', 'brand', 'cardnum', 'player'].some(function (key) {
-      var el = document.getElementById('row-' + id + '-' + key);
-      return el && el.value.trim() !== '';
-    });
-    if (!anyFilled) return;
-    var err = document.getElementById('row-' + id + '-year-err');
+  function clearRowErrorIfFilled(id) {
+    var el = document.getElementById('row-' + id + '-desc');
+    if (!el || el.value.trim() === '') return;
+    var err = document.getElementById('row-' + id + '-desc-err');
     if (err) err.hidden = true;
-    ['year', 'brand', 'cardnum', 'player'].forEach(function (key) {
-      var f = document.getElementById('row-' + id + '-' + key);
-      if (f) { var wrap = f.closest('.field'); if (wrap) wrap.classList.remove('has-error'); }
-    });
+    var wrap = el.closest('.field');
+    if (wrap) wrap.classList.remove('has-error');
   }
 
   function attachRowHandlers(id) {
@@ -1263,10 +1270,8 @@
         updatePill();
       });
     }
-    ['year', 'brand', 'cardnum', 'player'].forEach(function (key) {
-      var input = document.getElementById('row-' + id + '-' + key);
-      if (input) input.addEventListener('input', function () { clearRowErrorIfAnyFilled(id); });
-    });
+    var descInput = document.getElementById('row-' + id + '-desc');
+    if (descInput) descInput.addEventListener('input', function () { clearRowErrorIfFilled(id); });
   }
 
   function renumberRows() {
@@ -1306,9 +1311,8 @@
     rowsContainer.innerHTML = '';
     nextRowId = 1;
     order.lines.forEach(function (line) {
-      var service = String(line.service || 'STANDARD').toLowerCase();
       for (var i = 0; i < line.quantity; i++) {
-        addRow({ service: service });
+        addRow({});
       }
     });
     if (rowsContainer.querySelectorAll('.row-card').length === 0) {
@@ -1318,22 +1322,17 @@
     updatePill();
   }
 
-  /** @return {boolean} true when every card row has at least one of Year / Set / Card # / Player. */
+  /** @return {boolean} true when every card row has a description. */
   function validateScreen4() {
     var ok = true;
     rowsContainer.querySelectorAll('.row-card').forEach(function (row) {
       var id = row.getAttribute('data-row-id');
-      var anyFilled = ['year', 'brand', 'cardnum', 'player'].some(function (key) {
-        var el = document.getElementById('row-' + id + '-' + key);
-        return el && el.value.trim() !== '';
-      });
-      var err = document.getElementById('row-' + id + '-year-err');
-      if (err) err.hidden = anyFilled;
-      ['year', 'brand', 'cardnum', 'player'].forEach(function (key) {
-        var f = document.getElementById('row-' + id + '-' + key);
-        if (f) { var wrap = f.closest('.field'); if (wrap) wrap.classList.toggle('has-error', !anyFilled); }
-      });
-      if (!anyFilled) ok = false;
+      var el = document.getElementById('row-' + id + '-desc');
+      var filled = !!el && el.value.trim() !== '';
+      var err = document.getElementById('row-' + id + '-desc-err');
+      if (err) err.hidden = filled;
+      if (el) { var wrap = el.closest('.field'); if (wrap) wrap.classList.toggle('has-error', !filled); }
+      if (!filled) ok = false;
     });
     return ok;
   }
@@ -1399,16 +1398,9 @@
     var goalMap = { 'goal-worth': 'worth_grading', 'goal-crackout': 'crack_or_cross', 'goal-hold': 'hold_investment', 'goal-preservation': 'preservation', 'goal-flip': 'quick_flip', 'goal-resub': 'resubmission' };
     var goals = Object.keys(goalMap).filter(function (id) { var el = document.getElementById(id); return el && el.checked; }).map(function (id) { return goalMap[id]; });
 
-    var serviceMap = { standard: 'STANDARD', elite: 'ELITE', premium: 'PREMIUM', rush: 'RUSH' };
     var cards = getRowIds().map(function (id) {
       return {
-        year: val('row-' + id + '-year'),
-        set: val('row-' + id + '-brand'),
-        cardNo: val('row-' + id + '-cardnum'),
-        player: val('row-' + id + '-player'),
-        variation: val('row-' + id + '-parallel'),
-        serial: val('row-' + id + '-serial'),
-        service: serviceMap[val('row-' + id + '-service')] || 'STANDARD',
+        description: val('row-' + id + '-desc'),
         cost: val('row-' + id + '-cost'),
         rawComp: val('row-' + id + '-rawcomp'),
         gradedComp: val('row-' + id + '-gradedcomp')
@@ -1493,17 +1485,17 @@
       if (err2) err2.hidden = false;
       return;
     }
-    // Code.js reports card field errors as 'cards[0]' / 'cards[0].service' (bracket notation),
+    // Code.js reports card field errors as 'cards[0]' / 'cards[0].description' (bracket notation),
     // not the dot notation 'cards.0' this regex originally expected (integration fix 2026-09-25).
     var cardMatch = /^cards\[(\d+)\]/.exec(path);
     if (cardMatch) {
       var ids = getRowIds();
       var rowId = ids[Number(cardMatch[1])];
       if (rowId !== undefined) {
-        var errEl = document.getElementById('row-' + rowId + '-year-err');
+        var errEl = document.getElementById('row-' + rowId + '-desc-err');
         if (errEl) { errEl.hidden = false; }
-        var yearField = document.getElementById('row-' + rowId + '-year');
-        if (yearField) { var w = yearField.closest('.field'); if (w) w.classList.add('has-error'); }
+        var descField = document.getElementById('row-' + rowId + '-desc');
+        if (descField) { var w = descField.closest('.field'); if (w) w.classList.add('has-error'); }
       }
     }
   }
@@ -1566,22 +1558,8 @@
   function updateSummary() {
     var rows = rowsContainer.querySelectorAll('.row-card');
     var count = (lastSubmissionResponse && lastSubmissionResponse.cardCount) || rows.length;
-    // Aggregate every row's service, not just the first — a submission can mix service levels
-    // across cards (spec-ux review 2026-09-25: this used to read only rows[0]'s <select>, so a
-    // mixed-service submission showed one, possibly wrong, service label).
-    var serviceMap = { standard: 'STANDARD', elite: 'ELITE', premium: 'PREMIUM', rush: 'RUSH' };
-    var serviceCounts = {};
-    var serviceOrder = [];
-    rows.forEach(function (row) {
-      var id = row.getAttribute('data-row-id');
-      var sel = document.getElementById('row-' + id + '-service');
-      var label = (sel && serviceMap[sel.value]) || 'STANDARD';
-      if (!serviceCounts[label]) serviceOrder.push(label);
-      serviceCounts[label] = (serviceCounts[label] || 0) + 1;
-    });
-    var serviceLabel = serviceOrder.length > 0
-      ? serviceOrder.map(function (k) { return k + ' ×' + serviceCounts[k]; }).join(', ')
-      : 'STANDARD';
+    // The services are what the order paid for (its lines); cards carry no service of their own.
+    var serviceLabel = currentOrder ? formatServices(currentOrder.lines) : '';
     var returnLabel = 'Return ship after grading';
     if (document.getElementById('return-psa').checked) returnLabel = 'Send to PSA Vault after grading';
     if (document.getElementById('return-fanatics').checked) returnLabel = 'Send to Fanatics Collect Vault after grading';
@@ -1638,15 +1616,31 @@
 
   // ---- Order lookup / prefill -------------------------------------------
   var mode = 'test';
-  var currentOrder = null; // {orderId, conf, name, firstName, cardCount}
+  var currentOrder = null; // {orderId, conf, name, firstName, cardCount, lines}
   var hiddenAddress2 = '';
   var hiddenCountry = 'US';
   var lastLookup = null;
 
+  /** @param {{service: string, quantity: number}} line @return {string} e.g. "STANDARD × 12". */
+  function formatServicePart(line) {
+    return line.service + ' × ' + line.quantity;
+  }
+
+  /** The order's services, summed per service level over its lines, e.g. "STANDARD × 12, RUSH × 1". */
+  function formatServices(lines) {
+    var totals = [];
+    lines.forEach(function (line) {
+      var same = totals.filter(function (t) { return t.service === line.service; })[0];
+      if (same) same.quantity += line.quantity;
+      else totals.push({ service: line.service, quantity: line.quantity });
+    });
+    return totals.map(formatServicePart).join(', ');
+  }
+
   function formatOrderLine(order) {
     var groups = [];
     order.lines.forEach(function (line) {
-      var part = line.service + ' × ' + line.quantity;
+      var part = formatServicePart(line);
       var last = groups[groups.length - 1];
       if (last && last.product === line.product) {
         last.parts.push(part);
@@ -1668,7 +1662,8 @@
       conf: conf,
       name: order.name,
       firstName: order.customer.firstName || 'there',
-      cardCount: order.cardCount
+      cardCount: order.cardCount,
+      lines: order.lines
     };
 
     document.getElementById('full-name').value = (order.customer.firstName + ' ' + order.customer.lastName).trim();
@@ -1701,7 +1696,7 @@
     var rowWord = order.cardCount === 1 ? 'row' : 'rows';
     document.getElementById('screen4-intro').textContent =
       'Your order has ' + order.cardCount + ' ' + cardWord + ', so we started with ' + order.cardCount + ' ' + rowWord +
-      '. One row per card. The three price fields are optional. Service levels: STANDARD $1–$5,000, ELITE $5,001–$10,000, PREMIUM over $10,000, RUSH 24 hours.';
+      '. One row per card. The three cost basis fields are optional.';
 
     consentCheckbox.checked = false;
     signatureInput.value = '';
