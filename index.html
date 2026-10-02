@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Mr. Minty Submission Form (TEST)</title>
+<title>Mr. Minty Submission Form</title>
 <style>
   :root {
     --color-bg: #faf9f6;
@@ -66,6 +66,10 @@
   }
 
   * { box-sizing: border-box; }
+
+  /* A class that sets `display` (e.g. .start-over) would otherwise beat the browser's own
+     [hidden] rule, so hidden buttons and lines stayed visible. */
+  [hidden] { display: none !important; }
 
   body {
     margin: 0;
@@ -325,7 +329,8 @@
   }
   .field-error[hidden] { display: none; }
   .field.has-error input,
-  .field.has-error select { border-color: var(--color-danger); }
+  .field.has-error select,
+  .field.has-error textarea { border-color: var(--color-danger); }
 
   .option-list { display: grid; gap: 10px; margin-top: 10px; }
   @media (min-width: 860px) {
@@ -577,6 +582,8 @@
     display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;
   }
   .done-head h1 { font-size: 24px; margin: 0; }
+  .done-sub { margin: 8px 0 0; font-size: 14px; color: var(--color-ink-muted); }
+  .done-sub.is-notice { color: var(--color-ink); }
 
   .summary-card {
     text-align: center;
@@ -631,6 +638,7 @@
     color: var(--color-ink-muted);
     text-align: center;
   }
+  .done-actions { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 16px; }
   .done-footer .start-over {
     display: inline-block;
     margin-top: 8px;
@@ -675,7 +683,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Jost:wght@400;500;600;700&display=swap">
 </head>
 <body>
-<div class="banner">TEST VERSION — sample orders only. Nothing you enter reaches a customer.</div>
+<!-- Shown by the script only when the form service says it is the TEST deployment. -->
+<div class="banner" id="test-banner" hidden>TEST VERSION — sample orders only. Nothing you enter reaches a customer.</div>
 <div class="shell">
   <header class="app-header">
     <p class="brand-wordmark">Mr. <span>Minty</span></p>
@@ -693,10 +702,22 @@
   </header>
 
   <main>
-    <!-- Setup screen: shown when API_URL has not been filled in yet -->
+    <!-- Setup screen: shown off the store when TEST_API_URL has not been filled in yet -->
     <section class="screen" id="screen-setup" data-screen="setup" hidden>
-      <h1 class="screen-title">This test form isn't connected yet</h1>
-      <p class="screen-body"><code>API_URL</code> is empty at the top of this page's script. Set it to the deployed test web app address and reload this page.</p>
+      <h1 class="screen-title">This form isn't connected yet</h1>
+      <p class="screen-body"><code>TEST_API_URL</code> is empty at the top of this page's script. Set it to the deployed test web app address and reload this page.</p>
+    </section>
+
+    <!-- Store page, but the live form service is not set up (or answers as the TEST deployment) -->
+    <section class="screen" id="screen-unavailable" data-screen="unavailable" hidden>
+      <h1 class="screen-title">This form isn't available yet</h1>
+      <p class="screen-body" id="unavailable-message"></p>
+    </section>
+
+    <!-- Live mode, opened without an order link (no sample picker) -->
+    <section class="screen" id="screen-no-link" data-screen="no-link" hidden>
+      <h1 class="screen-title">Your prep form</h1>
+      <p class="screen-body" id="no-link-message"></p>
     </section>
 
     <!-- Loading screen -->
@@ -720,6 +741,17 @@
       <div class="screen-footer" style="border-top:none; padding-top:0; margin-top:0;">
         <button type="button" class="btn btn-secondary" id="btn-order-error-retry">Try again</button>
         <button type="button" class="btn btn-primary" id="btn-order-error-picker" hidden>Pick a sample order</button>
+      </div>
+    </section>
+
+    <!-- Saved draft found for this order (cards and comments only) -->
+    <section class="screen" id="screen-draft" data-screen="draft" hidden>
+      <h1 class="screen-title">Continue where you left off?</h1>
+      <p class="screen-body" id="draft-saved"></p>
+      <p class="screen-body">We kept the cards and comments you had entered, on this device only. Your contact details and signature are not saved.</p>
+      <div class="screen-footer">
+        <button type="button" class="btn btn-secondary" id="btn-draft-fresh">Start fresh</button>
+        <button type="button" class="btn btn-primary" id="btn-draft-continue">Continue</button>
       </div>
     </section>
 
@@ -757,12 +789,12 @@
       <div class="field-grid two-col">
         <div class="field">
           <label class="field-label" for="full-name">Full name</label>
-          <input type="text" id="full-name" required>
+          <input type="text" id="full-name" maxlength="200" required>
           <span class="field-error" id="err-full-name" hidden>Please enter your full name.</span>
         </div>
         <div class="field">
           <label class="field-label" for="email">Email</label>
-          <input type="email" id="email" required>
+          <input type="email" id="email" maxlength="200" required>
           <span class="field-error" id="err-email" hidden>Please enter an email address.</span>
         </div>
       </div>
@@ -770,19 +802,20 @@
       <div class="field-grid two-col" style="margin-top:14px;">
         <div class="field">
           <label class="field-label" for="phone">Phone</label>
-          <input type="tel" id="phone" required>
+          <input type="tel" id="phone" maxlength="200" required>
           <span class="field-error" id="err-phone" hidden>Please enter a phone number.</span>
         </div>
         <div class="field">
           <label class="field-label" for="instagram">Instagram handle (optional)</label>
-          <input type="text" id="instagram" placeholder="@">
+          <input type="text" id="instagram" placeholder="@" maxlength="200">
+          <span class="field-error" id="err-instagram" hidden>Please check this field.</span>
         </div>
       </div>
 
       <div class="field-grid" style="margin-top:14px;">
         <div class="field">
           <label class="field-label" for="street">Street address</label>
-          <input type="text" id="street" required>
+          <input type="text" id="street" maxlength="200" required>
           <span class="field-error" id="err-street" hidden>Please enter a street address.</span>
         </div>
       </div>
@@ -790,18 +823,26 @@
       <div class="field-grid city-grid" style="margin-top:14px;">
         <div class="field">
           <label class="field-label" for="city">City</label>
-          <input type="text" id="city" required>
+          <input type="text" id="city" maxlength="200" required>
           <span class="field-error" id="err-city" hidden>Please enter a city.</span>
         </div>
         <div class="field">
-          <label class="field-label" for="state">State</label>
-          <input type="text" id="state" required>
+          <label class="field-label" for="state" id="label-state">State</label>
+          <input type="text" id="state" maxlength="200" required>
           <span class="field-error" id="err-state" hidden>Please enter a state.</span>
         </div>
         <div class="field">
-          <label class="field-label" for="zip">ZIP</label>
-          <input type="text" id="zip" required>
+          <label class="field-label" for="zip" id="label-zip">ZIP</label>
+          <input type="text" id="zip" maxlength="200" required>
           <span class="field-error" id="err-zip" hidden>Please enter a ZIP code.</span>
+        </div>
+      </div>
+
+      <div class="field-grid two-col" style="margin-top:14px;">
+        <div class="field">
+          <label class="field-label" for="country">Country</label>
+          <input type="text" id="country" maxlength="200">
+          <span class="field-error" id="err-country" hidden>Please check this field.</span>
         </div>
       </div>
 
@@ -821,7 +862,7 @@
           </label>
           <div class="option-reveal field" id="reveal-psa" hidden>
             <label class="field-label" for="psa-vault">PSA Vault #</label>
-            <input type="text" id="psa-vault">
+            <input type="text" id="psa-vault" maxlength="200">
             <span class="field-error" id="err-psa-vault" hidden>Please enter your PSA Vault #.</span>
           </div>
         </div>
@@ -832,7 +873,7 @@
           </label>
           <div class="option-reveal field" id="reveal-fanatics" hidden>
             <label class="field-label" for="fanatics-vault">Fanatics Vault #</label>
-            <input type="text" id="fanatics-vault">
+            <input type="text" id="fanatics-vault" maxlength="200">
             <span class="field-error" id="err-fanatics-vault" hidden>Please enter your Fanatics Vault #.</span>
           </div>
         </div>
@@ -895,7 +936,8 @@
 
       <div class="field">
         <label class="field-label" for="notes">Anything else we should know? (optional)</label>
-        <textarea id="notes" rows="2"></textarea>
+        <textarea id="notes" rows="2" maxlength="2000"></textarea>
+        <span class="field-error" id="err-notes" hidden>Please check this field.</span>
       </div>
 
       <div class="screen-footer">
@@ -956,7 +998,7 @@
 
       <div class="field" style="margin-top:18px;">
         <label class="field-label" for="signature-name">Type your full name as your signature</label>
-        <input type="text" id="signature-name" placeholder="Sam Collector" required>
+        <input type="text" id="signature-name" placeholder="Sam Collector" maxlength="200" required>
         <span class="field-error" id="err-signature" hidden>Please type your full name as your signature.</span>
         <p class="signed-stamp" id="signed-stamp" hidden></p>
       </div>
@@ -978,6 +1020,7 @@
           <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg>
         </div>
         <h1 id="done-heading">Thank you. Your submission is complete.</h1>
+        <p class="done-sub" id="done-sub" hidden></p>
       </div>
 
       <p class="summary-card card" id="summary-line"></p>
@@ -1016,17 +1059,21 @@
       <h2 class="section-heading">Packing rules</h2>
       <ul class="checklist">
         <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Ship in a box.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Cards in a semi-rigid holder between two pieces of cardboard, bubble wrap.</span></li>
+        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Cards in a semi-rigid holder between two pieces of cardboard, then bubble wrap.</span></li>
         <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Signature service required.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Overnight or 2nd day for anything of significant value.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>No "Mr. Minty", "cards" or hobby-related names on the label or packaging.</span></li>
+        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Overnight or 2nd day shipping for anything of significant value.</span></li>
+        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>No "Mr. Minty", "cards" or hobby-related names on the shipping label or packaging.</span></li>
         <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Avoid shipping on weekends.</span></li>
       </ul>
 
       <div class="done-footer">
         <p id="sent-to-line">A copy of this form was sent to <span id="sent-to-email"></span>.</p>
-        <p>Questions? Email <a href="mailto:MrMinty@MrMinty.com">MrMinty@MrMinty.com</a>.</p>
-        <button type="button" class="start-over" id="btn-start-over" hidden>Try another sample order</button>
+        <p id="done-questions">Questions? Email <a href="mailto:MrMinty@MrMinty.com">MrMinty@MrMinty.com</a>.</p>
+        <p id="done-change" hidden>Need to change something? Email <a href="mailto:MrMinty@MrMinty.com">MrMinty@MrMinty.com</a> with your order number.</p>
+        <div class="done-actions">
+          <button type="button" class="start-over" id="btn-submit-again" hidden>Submit again (test only)</button>
+          <button type="button" class="start-over" id="btn-start-over" hidden>Try another sample order</button>
+        </div>
       </div>
     </section>
   </main>
@@ -1037,15 +1084,45 @@
   'use strict';
 
   // ---- Config -------------------------------------------------------
-  // Filled in after the test web app is deployed (Apps Script .../exec URL).
-  // While empty, the page shows a setup message instead of failing silently.
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzA47LQqMa_VeCUAwnjS28HQuyAJgLHLmxSfoRtj_x4hEDbqKOACLIBi-FNNmwUFad2yA/exec';
+  // Deployed TEST web app (Apps Script .../exec URL). Every host that is not a store host uses it.
+  const TEST_API_URL = 'https://script.google.com/macros/s/AKfycbzA47LQqMa_VeCUAwnjS28HQuyAJgLHLmxSfoRtj_x4hEDbqKOACLIBi-FNNmwUFad2yA/exec';
+  // Production web app. Empty until the live deployment exists: a store page then shows the
+  // "not available yet" screen and never talks to the test server.
+  const LIVE_API_URL = '';
+  // Pages on these hosts are the real store: they use LIVE_API_URL, never the test server.
+  const STORE_HOSTS = ['mrminty.com', 'www.mrminty.com'];
+  const STORE_HOST_SUFFIX = '.myshopify.com';
 
   // Must match the backend's DISCLAIMER_VERSION constant in apps-script/Code.js exactly.
   // (Integration fix 2026-09-25: this previously said 'test-v1-2026-09-25', an ad hoc value
   // invented before the two sides were wired together; Code.js's value is tied to the date the
   // disclaimer text was captured from the live sheet, so this side was changed to match it.)
   var DISCLAIMER_VERSION = 'prep-form-disclaimer-2026-09-23';
+
+  var TITLE_BASE = 'Mr. Minty Submission Form';
+  var CONTACT_EMAIL = 'MrMinty@MrMinty.com';
+  var CONTACT_LINE = 'Please email ' + CONTACT_EMAIL + ' with your order number.';
+  var MAX_CARDS = 200;
+  var MAX_FIELD_LEN = 200;
+  var MAX_COMMENTS_LEN = 2000;
+
+  var LINK_STORAGE_KEY = 'mm-prep-link';
+  var SUBMIT_KEY_PREFIX = 'mm-prep-submitkey:';
+  var SUBMIT_KEY_PATTERN = /^[A-Za-z0-9]{16,64}$/;
+  var DRAFT_PREFIX = 'mm-prep-draft:v1:';
+  var DRAFT_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+  var DRAFT_SAVE_DELAY_MS = 1000;
+  // Waits before the three api=status checks that follow a lost or unreadable submit response.
+  var STATUS_RETRY_DELAYS_MS = [1000, 2000, 4000];
+
+  // NO_LINK_MESSAGE: wording depends on D3 / plan item 2 (how the customer receives the link). Neutral on
+  // purpose: do not say "order confirmation email" until Steve has answered plan item 2.
+  var NO_LINK_MESSAGE = "Open the link in your order email to fill in your prep form. Can't find it? Email " + CONTACT_EMAIL + " with your order number.";
+  var UNAVAILABLE_MESSAGE = "Please email " + CONTACT_EMAIL + " with your order number.";
+  var UNCONFIRMED_MESSAGE = "We couldn't confirm your form went through. Pressing Submit again is safe — it won't create a duplicate.";
+  // Shown on the thank-you screen when the customer edited the form after an unresolved attempt and the
+  // server turned out to hold the first submission (SPEC-v1.8-changes.md §3, Submit).
+  var EDITS_NOT_INCLUDED_MESSAGE = 'Your first submission went through. Changes made after it were not included — email ' + CONTACT_EMAIL + ' with your order number to change anything.';
 
   var SCREEN_NAMES = {
     1: "Let's get started",
@@ -1056,20 +1133,155 @@
     6: "You're all set"
   };
 
+  // The server's own message is preferred whenever it sends one (see errorText).
   var ERROR_MESSAGES = {
-    not_found: "We couldn't find that order link. Please use the link from your order email.",
-    bad_conf: "We couldn't find that order link. Please use the link from your order email.",
+    not_found: "We couldn't find that order. Use the whole link from your order email.",
+    bad_conf: "We couldn't find that order. Use the whole link from your order email.",
     test_only: "This is a TEST deployment — only the sample orders below work here.",
     no_service_lines: "That order doesn't include a prep service, so there's nothing to fill in here.",
-    daily_cap: "We've reached today's submission limit for this test link. Please try again tomorrow.",
+    order_cancelled: "This order was cancelled, so there is no prep form to fill in.",
+    order_refunded: "This order was refunded, so there is no prep form to fill in.",
+    order_unpaid: "This order hasn't been paid yet, so the prep form isn't open.",
+    already_submitted: "We already have a prep form for this order.",
+    daily_cap: "We've reached today's submission limit. Please try again tomorrow.",
     busy: "The form is busy right now. Please wait a few seconds and try again.",
     validation: "Please check the highlighted fields and try again.",
-    server: "Something went wrong on our end. Please try again, or email MrMinty@MrMinty.com if it keeps happening.",
+    server: "Something went wrong on our end. Please try again, or email " + CONTACT_EMAIL + " if it keeps happening.",
     network: "We couldn't reach the form service. Check your connection and try again.",
-    not_available: "This form is opened from the link in your order email."
+    not_available: "This form is opened from the link in your order email.",
+    unknown_api: "Something went wrong on our end. Please try again."
   };
+  // Errors the customer can fix by trying again need no contact line; every other error blocks them.
+  var NON_BLOCKING_CODES = ['validation', 'busy', 'network', 'unconfirmed'];
+  // Order-lookup errors where "Try again" cannot help.
+  var NO_RETRY_CODES = ['not_found', 'bad_conf', 'test_only', 'no_service_lines', 'order_cancelled', 'order_refunded', 'order_unpaid', 'already_submitted', 'not_available'];
+
+  // ---- Small helpers -----------------------------------------------------
+  var warned = {};
+  /**
+   * console.warn at most once per id (a blocked-storage page would otherwise warn on every access).
+   * @param {string} id
+   * @param {string} message
+   * @param {*} err
+   * @return {void}
+   */
+  function warnOnce(id, message, err) {
+    if (warned[id]) return;
+    warned[id] = true;
+    console.warn(message, err);
+  }
+
+  /**
+   * The message to show for an error code: the server's own text when it sent one, else ours.
+   * Blocking errors always end with how to reach a person.
+   * @param {?string} code
+   * @param {?string} serverMessage
+   * @return {string}
+   */
+  function errorText(code, serverMessage) {
+    var text = serverMessage || ERROR_MESSAGES[code] || ERROR_MESSAGES.server;
+    if (NON_BLOCKING_CODES.indexOf(code) === -1 && text.indexOf(CONTACT_EMAIL) === -1) text += ' ' + CONTACT_LINE;
+    return text;
+  }
+
+  /**
+   * Sets a message, turning the contact address in it into a mailto link (DOM nodes, no innerHTML).
+   * @param {Element} el
+   * @param {string} text
+   * @return {void}
+   */
+  function renderMessage(el, text) {
+    el.textContent = '';
+    String(text).split(CONTACT_EMAIL).forEach(function (part, i) {
+      if (i > 0) {
+        var a = document.createElement('a');
+        a.href = 'mailto:' + CONTACT_EMAIL;
+        a.textContent = CONTACT_EMAIL;
+        el.appendChild(a);
+      }
+      if (part) el.appendChild(document.createTextNode(part));
+    });
+  }
+
+  /**
+   * @param {string} iso
+   * @return {string} e.g. "June 5, 2026 at 3:14 PM" in the viewer's own time zone, or '' when the time is unreadable.
+   */
+  function formatLocalDateTime(iso) {
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) +
+      ' at ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+  }
+
+  /** @param {number} ms @return {Promise<void>} */
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, ms); });
+  }
+
+  // ---- Storage (wrapped: it throws in private/blocked-storage modes) -----------
+  /** @param {string} key @return {?string} */
+  function sessionGet(key) {
+    try { return window.sessionStorage.getItem(key); }
+    catch (err) { warnOnce('session', 'sessionStorage is unavailable; continuing without it.', err); return null; }
+  }
+  /** @param {string} key @param {string} value @return {boolean} true when the value was stored. */
+  function sessionSet(key, value) {
+    try { window.sessionStorage.setItem(key, value); return true; }
+    catch (err) { warnOnce('session', 'sessionStorage is unavailable; continuing without it.', err); return false; }
+  }
+  /** @param {string} key @return {void} */
+  function sessionRemove(key) {
+    try { window.sessionStorage.removeItem(key); }
+    catch (err) { warnOnce('session', 'sessionStorage is unavailable; continuing without it.', err); }
+  }
+  /** @param {string} prefix @return {string[]} */
+  function sessionKeysWithPrefix(prefix) {
+    var out = [];
+    try {
+      for (var i = 0; i < window.sessionStorage.length; i++) {
+        var k = window.sessionStorage.key(i);
+        if (k && k.indexOf(prefix) === 0) out.push(k);
+      }
+    } catch (err) { warnOnce('session', 'sessionStorage is unavailable; continuing without it.', err); }
+    return out;
+  }
+
+  // Drafts live in localStorage. The first failure turns autosave off for the page's lifetime.
+  var draftStorageOk = true;
+  /**
+   * @param {function(Storage): *} action
+   * @return {*} the action's result, or null when localStorage is unavailable.
+   */
+  function withDraftStorage(action) {
+    if (!draftStorageOk) return null;
+    try { return action(window.localStorage); }
+    catch (err) {
+      draftStorageOk = false;
+      console.warn('Autosave is off: localStorage is unavailable.', err);
+      return null;
+    }
+  }
+  /** @param {string} key @return {?string} */
+  function draftGet(key) { return withDraftStorage(function (s) { return s.getItem(key); }); }
+  /** @param {string} key @param {string} value @return {void} */
+  function draftSet(key, value) { withDraftStorage(function (s) { s.setItem(key, value); }); }
+  /** @param {string} key @return {void} */
+  function draftRemove(key) { withDraftStorage(function (s) { s.removeItem(key); }); }
+  /** @return {string[]} */
+  function draftKeys() {
+    return withDraftStorage(function (s) {
+      var out = [];
+      for (var i = 0; i < s.length; i++) {
+        var k = s.key(i);
+        if (k && k.indexOf(DRAFT_PREFIX) === 0) out.push(k);
+      }
+      return out;
+    }) || [];
+  }
 
   // ---- URL params: fragment first, then query string -----------------
+  /** @param {string} name @return {?string} */
   function getParam(name) {
     var hashStr = location.hash.indexOf('#') === 0 ? location.hash.slice(1) : location.hash;
     var hashParams = new URLSearchParams(hashStr);
@@ -1079,26 +1291,36 @@
     return null;
   }
 
-  // The API endpoint can only be repointed (via the "api" fragment/query
-  // param) when the page itself is being served from 127.0.0.1/localhost.
-  // A real deployment (any other host) always uses the API_URL constant
-  // above, so this override cannot be used to redirect a live page.
+  /** @param {string} hostname @return {boolean} true on the store's own hosts. */
+  function isStoreHost(hostname) {
+    var h = String(hostname || '').toLowerCase();
+    return STORE_HOSTS.indexOf(h) !== -1 ||
+      (h.length > STORE_HOST_SUFFIX.length && h.slice(-STORE_HOST_SUFFIX.length) === STORE_HOST_SUFFIX);
+  }
+  var onStoreHost = isStoreHost(location.hostname);
+
+  // The API endpoint can only be repointed (via the "api" fragment/query param) when the page
+  // itself is being served from 127.0.0.1/localhost. A real deployment (any other host) always
+  // uses the constants above, so this override cannot be used to redirect a live page.
+  /** @return {string} The web app address this page talks to ('' when none is configured). */
   function resolveApiBase() {
     var isLocal = (location.hostname === '127.0.0.1' || location.hostname === 'localhost');
     if (isLocal) {
       var override = getParam('api');
       if (override) return override;
     }
-    return API_URL;
+    return onStoreHost ? LIVE_API_URL : TEST_API_URL;
   }
   var API_BASE = resolveApiBase();
 
   // ---- Fetch helpers ---------------------------------------------------
+  /** @param {Response} res @return {Promise<*>} The parsed JSON body; rejects with 'bad_json_response'. */
   function readJson(res) {
     return res.text().then(function (text) {
       try { return JSON.parse(text); } catch (e) { throw new Error('bad_json_response'); }
     });
   }
+  /** @param {string} action @param {Object} params @return {Promise<*>} */
   function apiGet(action, params) {
     var url = new URL(API_BASE);
     url.searchParams.set('api', action);
@@ -1107,6 +1329,7 @@
     });
     return fetch(url.toString(), { credentials: 'omit' }).then(readJson);
   }
+  /** @param {Object} payload @return {Promise<*>} */
   function apiPost(payload) {
     return fetch(API_BASE, {
       method: 'POST',
@@ -1116,18 +1339,79 @@
     }).then(readJson);
   }
 
+  // ---- Order link: URL first, then this tab's sessionStorage ------------------
+  /**
+   * Removes the named keys from a raw query/fragment string and leaves every other part untouched.
+   * @param {string} raw
+   * @param {string[]} names
+   * @return {string}
+   */
+  function removeParams(raw, names) {
+    return raw.split('&').filter(function (part) {
+      if (part === '') return false;
+      return names.indexOf(new URLSearchParams(part).keys().next().value) === -1;
+    }).join('&');
+  }
+
+  /**
+   * Takes ONLY the order and conf keys out of the address bar (fragment and query string), keeping
+   * the path and every other key (the localhost `api` override in particular).
+   * @return {void}
+   */
+  function stripLinkFromUrl() {
+    var hash = removeParams(location.hash.indexOf('#') === 0 ? location.hash.slice(1) : location.hash, ['order', 'conf']);
+    var search = removeParams(location.search.indexOf('?') === 0 ? location.search.slice(1) : location.search, ['order', 'conf']);
+    var url = location.pathname + (search ? '?' + search : '') + (hash ? '#' + hash : '');
+    try { history.replaceState(history.state, '', url); }
+    catch (err) { warnOnce('replaceState', 'Could not take the order link out of the address bar.', err); }
+  }
+
+  /**
+   * status 'ok': both keys in the URL (stored for this tab, then taken out of the address bar) or
+   * both in sessionStorage; 'bad': only one of them in the URL (a truncated link, never completed
+   * from storage because that could load a different order); 'none': no link anywhere.
+   * @return {{status: string, order?: string, conf?: string}}
+   */
+  function resolveLink() {
+    var order = getParam('order');
+    var conf = getParam('conf');
+    if (order !== null || conf !== null) {
+      if (!order || !conf) return { status: 'bad' };
+      // The URL wins. Only a successful write may take the link out of the address bar.
+      if (sessionSet(LINK_STORAGE_KEY, JSON.stringify({ order: order, conf: conf }))) stripLinkFromUrl();
+      return { status: 'ok', order: order, conf: conf };
+    }
+    var stored = sessionGet(LINK_STORAGE_KEY);
+    if (stored === null) return { status: 'none' };
+    var parsed = null;
+    try { parsed = JSON.parse(stored); }
+    catch (err) { console.warn('Ignoring an unreadable saved order link.', err); }
+    if (parsed && typeof parsed.order === 'string' && parsed.order && typeof parsed.conf === 'string' && parsed.conf) {
+      return { status: 'ok', order: parsed.order, conf: parsed.conf };
+    }
+    sessionRemove(LINK_STORAGE_KEY);
+    return { status: 'none' };
+  }
+
   // ---- Shell / navigation ----------------------------------------------
   var current = 'loading';
   var nextRowId = 1;
+  var mode = null; // 'test' | 'live' once the form service has answered ping
 
   var stepIndicator = document.getElementById('step-indicator');
   var progressSegs = document.querySelectorAll('.progress-seg');
   var progressBar = document.getElementById('progress-bar');
 
+  /**
+   * Shows one screen. 'submitted' is the already-submitted variant of screen 6.
+   * @param {string} key
+   * @return {void}
+   */
   function showView(key) {
     current = key;
+    var sectionKey = (key === 'submitted') ? '6' : key;
     document.querySelectorAll('.screen').forEach(function (sec) {
-      sec.hidden = sec.getAttribute('data-screen') !== key;
+      sec.hidden = sec.getAttribute('data-screen') !== sectionKey;
     });
     var n = Number(key);
     if (!isNaN(n) && n >= 1 && n <= 6 && String(n) === key) {
@@ -1148,15 +1432,30 @@
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
+  /** The TEST banner, the "[TEST] " title prefix and the sample picker exist only in test mode. @return {void} */
+  function applyModeUi() {
+    document.getElementById('test-banner').hidden = (mode !== 'test');
+    document.title = (mode === 'test' ? '[TEST] ' : '') + TITLE_BASE;
+  }
+
+  /** Puts a field's original (client-side) error text back after a server message replaced it. @param {Element} err @return {void} */
+  function restoreErrorText(err) {
+    var original = err.getAttribute('data-default');
+    if (original !== null) err.textContent = original;
+  }
+
+  /** @param {string} fieldId @param {string} errId @param {boolean} isEmpty @return {void} */
   function setError(fieldId, errId, isEmpty) {
     var field = document.getElementById(fieldId);
     var err = document.getElementById(errId);
     if (!field || !err) return;
+    if (isEmpty) restoreErrorText(err);
     err.hidden = !isEmpty;
     var wrap = field.closest('.field');
     if (wrap) wrap.classList.toggle('has-error', isEmpty);
   }
 
+  /** @param {string} fieldId @param {string} errId @return {void} */
   function clearErrorOnInput(fieldId, errId) {
     var field = document.getElementById(fieldId);
     if (!field) return;
@@ -1181,12 +1480,42 @@
     ['zip', 'err-zip']
   ];
   screen2Required.forEach(function (pair) { clearErrorOnInput(pair[0], pair[1]); });
+  clearErrorOnInput('country', 'err-country');
+  clearErrorOnInput('instagram', 'err-instagram');
+  clearErrorOnInput('psa-vault', 'err-psa-vault');
+  clearErrorOnInput('fanatics-vault', 'err-fanatics-vault');
+  clearErrorOnInput('notes', 'err-notes');
+
+  /**
+   * Outside the US the state and ZIP are optional. An empty country counts as the US.
+   * @param {string} value
+   * @return {boolean}
+   */
+  function isUsCountry(value) {
+    return ['', 'us', 'usa', 'united states', 'united states of america'].indexOf(String(value || '').trim().toLowerCase()) !== -1;
+  }
+
+  /** Labels and "required" follow the country box: State and ZIP are optional outside the US. @return {void} */
+  function applyCountryRules() {
+    var us = isUsCountry(val('country'));
+    document.getElementById('label-state').textContent = us ? 'State' : 'State (optional)';
+    document.getElementById('label-zip').textContent = us ? 'ZIP' : 'ZIP (optional)';
+    document.getElementById('state').required = us;
+    document.getElementById('zip').required = us;
+    if (!us) {
+      setError('state', 'err-state', false);
+      setError('zip', 'err-zip', false);
+    }
+  }
+  document.getElementById('country').addEventListener('input', applyCountryRules);
 
   /** @return {boolean} true when every required screen-2 field is filled. */
   function validateScreen2() {
     var ok = true;
+    var us = isUsCountry(val('country'));
     screen2Required.forEach(function (pair) {
-      var isEmpty = document.getElementById(pair[0]).value.trim() === '';
+      var optional = !us && (pair[0] === 'state' || pair[0] === 'zip');
+      var isEmpty = !optional && document.getElementById(pair[0]).value.trim() === '';
       setError(pair[0], pair[1], isEmpty);
       if (isEmpty) ok = false;
     });
@@ -1222,11 +1551,13 @@
   var addRowBtn = document.getElementById('btn-add-row');
   var pill = document.getElementById('row-count-pill');
 
+  /** @param {*} s @return {string} */
   function escapeAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
+  /** @param {number} id @param {Object} opts @return {string} */
   function rowTemplate(id, opts) {
     opts = opts || {};
     var description = opts.description || '';
@@ -1240,15 +1571,16 @@
     html += '  <div class="field field-desc"><label class="field-label" for="row-' + id + '-desc">Card description</label><input type="text" id="row-' + id + '-desc" value="' + escapeAttr(description) + '" placeholder="e.g. 2024 Topps Chrome #150 Player Name Gold Refractor 23/50" maxlength="200"><span class="field-error" id="row-' + id + '-desc-err" hidden>Describe the card</span></div>';
     html += '  <div class="cost-basis">';
     html += '    <span class="cost-basis-legend">Cost basis (optional)</span>';
-    html += '    <div class="field"><label class="field-label" for="row-' + id + '-cost">Your cost ($)</label><input type="text" id="row-' + id + '-cost" value="' + escapeAttr(cost) + '"></div>';
-    html += '    <div class="field"><label class="field-label" for="row-' + id + '-rawcomp">Raw comp ($)</label><input type="text" id="row-' + id + '-rawcomp" value="' + escapeAttr(rawComp) + '"></div>';
-    html += '    <div class="field"><label class="field-label" for="row-' + id + '-gradedcomp">Graded comp ($)</label><input type="text" id="row-' + id + '-gradedcomp" value="' + escapeAttr(gradedComp) + '"></div>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-cost">Your cost ($)</label><input type="text" id="row-' + id + '-cost" value="' + escapeAttr(cost) + '" maxlength="200"><span class="field-error" id="row-' + id + '-cost-err" hidden></span></div>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-rawcomp">Raw comp ($)</label><input type="text" id="row-' + id + '-rawcomp" value="' + escapeAttr(rawComp) + '" maxlength="200"><span class="field-error" id="row-' + id + '-rawcomp-err" hidden></span></div>';
+    html += '    <div class="field"><label class="field-label" for="row-' + id + '-gradedcomp">Graded comp ($)</label><input type="text" id="row-' + id + '-gradedcomp" value="' + escapeAttr(gradedComp) + '" maxlength="200"><span class="field-error" id="row-' + id + '-gradedcomp-err" hidden></span></div>';
     html += '  </div>';
     html += '  <button type="button" class="row-remove" id="row-' + id + '-remove" aria-label="Remove card">&times;</button>';
     html += '</div>';
     return html;
   }
 
+  /** @param {number} id @return {void} */
   function clearRowErrorIfFilled(id) {
     var el = document.getElementById('row-' + id + '-desc');
     if (!el || el.value.trim() === '') return;
@@ -1258,6 +1590,7 @@
     if (wrap) wrap.classList.remove('has-error');
   }
 
+  /** @param {number} id @return {void} */
   function attachRowHandlers(id) {
     var removeBtn = document.getElementById('row-' + id + '-remove');
     if (removeBtn) {
@@ -1268,12 +1601,18 @@
         if (el) el.remove();
         renumberRows();
         updatePill();
+        addRowBtn.disabled = rowsContainer.querySelectorAll('.row-card').length >= MAX_CARDS;
+        scheduleDraftSave();
       });
     }
     var descInput = document.getElementById('row-' + id + '-desc');
     if (descInput) descInput.addEventListener('input', function () { clearRowErrorIfFilled(id); });
+    ['cost', 'rawcomp', 'gradedcomp'].forEach(function (suffix) {
+      clearErrorOnInput('row-' + id + '-' + suffix, 'row-' + id + '-' + suffix + '-err');
+    });
   }
 
+  /** @return {void} */
   function renumberRows() {
     var rows = rowsContainer.querySelectorAll('.row-card');
     rows.forEach(function (row, i) {
@@ -1282,42 +1621,40 @@
     });
   }
 
+  /** @return {string[]} */
   function getRowIds() {
     return Array.prototype.map.call(rowsContainer.querySelectorAll('.row-card'), function (row) {
       return row.getAttribute('data-row-id');
     });
   }
 
+  /** @return {void} */
   function updatePill() {
     var count = rowsContainer.querySelectorAll('.row-card').length;
     var total = (currentOrder && currentOrder.cardCount) || count;
     pill.textContent = count + ' of ' + total + ' listed';
   }
 
+  /** @param {Object} opts @return {void} */
   function addRow(opts) {
     var rows = rowsContainer.querySelectorAll('.row-card').length;
-    if (rows >= 200) return;
+    if (rows >= MAX_CARDS) return;
     var id = nextRowId++;
     rowsContainer.insertAdjacentHTML('beforeend', rowTemplate(id, opts));
     attachRowHandlers(id);
     renumberRows();
     updatePill();
-    addRowBtn.disabled = rowsContainer.querySelectorAll('.row-card').length >= 200;
+    addRowBtn.disabled = rowsContainer.querySelectorAll('.row-card').length >= MAX_CARDS;
   }
 
-  addRowBtn.addEventListener('click', function () { addRow({}); });
+  addRowBtn.addEventListener('click', function () { addRow({}); scheduleDraftSave(); });
 
+  /** One empty row per card the order paid for (at least one, at most the form's limit). @param {Object} order @return {void} */
   function buildCardRowsFromOrder(order) {
     rowsContainer.innerHTML = '';
     nextRowId = 1;
-    order.lines.forEach(function (line) {
-      for (var i = 0; i < line.quantity; i++) {
-        addRow({});
-      }
-    });
-    if (rowsContainer.querySelectorAll('.row-card').length === 0) {
-      addRow({}); // defensive: never show zero rows
-    }
+    var wanted = Math.max(1, Math.min(MAX_CARDS, Number(order.cardCount) || 0));
+    for (var i = 0; i < wanted; i++) addRow({});
     renumberRows();
     updatePill();
   }
@@ -1330,7 +1667,7 @@
       var el = document.getElementById('row-' + id + '-desc');
       var filled = !!el && el.value.trim() !== '';
       var err = document.getElementById('row-' + id + '-desc-err');
-      if (err) err.hidden = filled;
+      if (err) { if (!filled) restoreErrorText(err); err.hidden = filled; }
       if (el) { var wrap = el.closest('.field'); if (wrap) wrap.classList.toggle('has-error', !filled); }
       if (!filled) ok = false;
     });
@@ -1342,6 +1679,7 @@
   var signatureInput = document.getElementById('signature-name');
   var signedStamp = document.getElementById('signed-stamp');
 
+  /** @return {string} */
   function formatStamp() {
     var now = new Date();
     var dateStr = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
@@ -1365,6 +1703,7 @@
     if (consentCheckbox.checked) document.getElementById('err-consent').hidden = true;
   });
 
+  /** @return {boolean} */
   function validateScreen5() {
     var consentOk = consentCheckbox.checked;
     var sigOk = signatureInput.value.trim() !== '';
@@ -1375,8 +1714,269 @@
     return consentOk && sigOk;
   }
 
+  // ---- Submit key: one per unresolved submit attempt -----------------------
+  // Created on a Submit click when none is held for the order; kept (memory + sessionStorage) across
+  // network failures, unreadable responses, busy and error responses, because none of those writes
+  // an index row, so sending the same key again is harmless and a lost-response retry stays
+  // idempotent on the server. Deleted when an ok:true response arrives, on "Submit again (test only)",
+  // on "Start over / try another sample" and when a different order is loaded.
+  // A held key belongs to the exact form contents it was first sent with: it is stored together with a
+  // fingerprint of what the customer had entered (SPEC-v1.8-changes.md §3, Submit). Re-sending the same
+  // key with edited contents would make the server replay the FIRST submission while the page showed the
+  // edited values as success, so an edited resubmit first asks api=status about the held key.
+  // sessionStorage value: JSON {"key": "<32 hex>", "fp": "<fingerprint>"}. The old plain-string value
+  // (key only) has no fingerprint and is dropped on read: with no way to tell which contents it was sent
+  // with, sending it again could replay a submission under edited values. The worst case of dropping it
+  // is one extra submission attempt, which live mode refuses as already_submitted.
+  var heldKey = { order: null, key: null, fp: null };
+
+  /** @return {string} 32 hex characters. */
+  function newSubmitKey() {
+    var bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.prototype.map.call(bytes, function (b) { return ('0' + b.toString(16)).slice(-2); }).join('');
+  }
+
+  /**
+   * cyrb53, a small synchronous 53-bit string hash. The fingerprint is a hash, not the entered text, so
+   * no names, addresses or card descriptions are kept in sessionStorage beside the key.
+   * @param {string} text
+   * @return {string} Hex.
+   */
+  function hashString(text) {
+    var h1 = 0xdeadbeef;
+    var h2 = 0x41c6ce57;
+    for (var i = 0; i < text.length; i++) {
+      var ch = text.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(16);
+  }
+
+  /**
+   * Fingerprint of everything the customer entered in a submit payload. Built from an explicit list of
+   * fields, so a timestamp (signature.clientTime/clientTz), the key itself, or anything else that changes
+   * without the customer editing can never change it.
+   * @param {Object} payload A payload from buildPayload.
+   * @return {string}
+   */
+  function fingerprintPayload(payload) {
+    var entered = JSON.stringify({
+      contact: payload.contact,
+      returnMethod: payload.returnMethod,
+      vaultNumber: payload.vaultNumber,
+      consignment: payload.consignment,
+      experience: payload.experience,
+      acquired: payload.acquired,
+      goals: payload.goals,
+      comments: payload.comments,
+      cards: payload.cards,
+      signatureName: payload.signature.name,
+      agreed: payload.signature.agreed
+    });
+    return entered.length + '-' + hashString(entered);
+  }
+
+  /**
+   * @param {string} orderId
+   * @return {?{key: string, fp: string}} The key held for this order and the fingerprint of the contents it
+   *   was first sent with, or null when none is held (or the stored value is in the old key-only format).
+   */
+  function readHeldSubmit(orderId) {
+    if (heldKey.order === orderId && heldKey.key && heldKey.fp) return { key: heldKey.key, fp: heldKey.fp };
+    var stored = sessionGet(SUBMIT_KEY_PREFIX + orderId);
+    if (stored === null) return null;
+    var parsed = null;
+    try { parsed = JSON.parse(stored); }
+    catch (err) { warnOnce('submitkey', 'Ignoring a saved submit key in an old or unreadable format.', err); }
+    if (parsed && typeof parsed === 'object' && typeof parsed.key === 'string' && SUBMIT_KEY_PATTERN.test(parsed.key) &&
+        typeof parsed.fp === 'string' && parsed.fp !== '') {
+      heldKey = { order: orderId, key: parsed.key, fp: parsed.fp };
+      return { key: parsed.key, fp: parsed.fp };
+    }
+    warnOnce('submitkey', 'Ignoring a saved submit key without a usable form fingerprint.', null);
+    sessionRemove(SUBMIT_KEY_PREFIX + orderId);
+    return null;
+  }
+
+  /**
+   * Creates a new key for these form contents and holds it (memory + sessionStorage).
+   * @param {string} orderId
+   * @param {string} fp fingerprintPayload of the contents that are about to be sent under the key.
+   * @return {string} The new key.
+   */
+  function holdNewSubmitKey(orderId, fp) {
+    var key = newSubmitKey();
+    heldKey = { order: orderId, key: key, fp: fp };
+    sessionSet(SUBMIT_KEY_PREFIX + orderId, JSON.stringify({ key: key, fp: fp }));
+    return key;
+  }
+
+  /** @param {?string} orderId @return {void} */
+  function dropSubmitKey(orderId) {
+    if (!orderId) return;
+    if (heldKey.order === orderId) heldKey = { order: null, key: null, fp: null };
+    sessionRemove(SUBMIT_KEY_PREFIX + orderId);
+  }
+
+  /** Loading a different order ends every other order's unresolved attempt. @param {string} orderId @return {void} */
+  function dropOtherSubmitKeys(orderId) {
+    if (heldKey.order !== null && heldKey.order !== orderId) heldKey = { order: null, key: null, fp: null };
+    sessionKeysWithPrefix(SUBMIT_KEY_PREFIX).forEach(function (k) {
+      if (k !== SUBMIT_KEY_PREFIX + orderId) sessionRemove(k);
+    });
+  }
+
+  // ---- Autosave (cards and comments only), localStorage -----------------------
+  var draftOrderId = null;
+  var draftEnabled = false;
+  var draftTimer = null;
+
+  /** @param {*} v @return {string} */
+  function clip(v) {
+    return typeof v === 'string' ? v.slice(0, MAX_FIELD_LEN) : '';
+  }
+
+  /** @return {{savedAt: string, cards: Object[], comments: string}} */
+  function collectDraft() {
+    return {
+      savedAt: new Date().toISOString(),
+      cards: getRowIds().map(function (id) {
+        return {
+          description: val('row-' + id + '-desc'),
+          cost: val('row-' + id + '-cost'),
+          rawComp: val('row-' + id + '-rawcomp'),
+          gradedComp: val('row-' + id + '-gradedcomp')
+        };
+      }),
+      comments: val('notes')
+    };
+  }
+
+  /** @return {void} */
+  function saveDraftNow() {
+    if (draftTimer !== null) { clearTimeout(draftTimer); draftTimer = null; }
+    if (!draftEnabled || !draftOrderId) return;
+    var draft = collectDraft();
+    var hasContent = draft.comments.trim() !== '' || draft.cards.some(function (c) {
+      return c.description.trim() !== '' || c.cost.trim() !== '' || c.rawComp.trim() !== '' || c.gradedComp.trim() !== '';
+    });
+    if (hasContent) draftSet(DRAFT_PREFIX + draftOrderId, JSON.stringify(draft));
+    else draftRemove(DRAFT_PREFIX + draftOrderId);
+  }
+
+  /** About one second after the last edit. @return {void} */
+  function scheduleDraftSave() {
+    if (!draftEnabled) return;
+    if (draftTimer !== null) clearTimeout(draftTimer);
+    draftTimer = setTimeout(saveDraftNow, DRAFT_SAVE_DELAY_MS);
+  }
+
+  /** @param {string} orderId @return {void} */
+  function startAutosave(orderId) {
+    draftOrderId = orderId;
+    draftEnabled = true;
+  }
+
+  /** Stops autosave and deletes the saved draft of the order being filled in. @return {void} */
+  function discardDraft() {
+    if (draftTimer !== null) { clearTimeout(draftTimer); draftTimer = null; }
+    draftEnabled = false;
+    if (draftOrderId) draftRemove(DRAFT_PREFIX + draftOrderId);
+  }
+
+  /** Saves any edit still waiting for the one-second delay, then stops autosave (the draft stays). @return {void} */
+  function pauseAutosave() {
+    saveDraftNow();
+    draftEnabled = false;
+  }
+
+  /** @param {?string} text @return {?{savedAt: string, cards: Object[], comments: string}} null when unreadable. */
+  function parseDraft(text) {
+    if (text === null || text === undefined) return null;
+    var d = null;
+    try { d = JSON.parse(text); }
+    catch (err) { console.warn('Ignoring an unreadable saved draft.', err); return null; }
+    if (!d || typeof d.savedAt !== 'string' || isNaN(Date.parse(d.savedAt)) || !Array.isArray(d.cards)) {
+      console.warn('Ignoring a saved draft with an unexpected shape.');
+      return null;
+    }
+    return {
+      savedAt: d.savedAt,
+      cards: d.cards.slice(0, MAX_CARDS).map(function (c) {
+        c = c || {};
+        return { description: clip(c.description), cost: clip(c.cost), rawComp: clip(c.rawComp), gradedComp: clip(c.gradedComp) };
+      }),
+      comments: typeof d.comments === 'string' ? d.comments.slice(0, MAX_COMMENTS_LEN) : ''
+    };
+  }
+
+  /** @param {{savedAt: string}} draft @return {boolean} */
+  function isDraftExpired(draft) {
+    return Date.now() - Date.parse(draft.savedAt) > DRAFT_MAX_AGE_MS;
+  }
+
+  /** Drops every saved draft that is unreadable or older than 30 days. @return {void} */
+  function sweepOldDrafts() {
+    draftKeys().forEach(function (key) {
+      var d = parseDraft(draftGet(key));
+      if (!d || isDraftExpired(d)) draftRemove(key);
+    });
+  }
+
+  /**
+   * The saved draft of this order when it is worth offering: it has at least one card description.
+   * @param {string} orderId
+   * @return {?{savedAt: string, cards: Object[], comments: string}}
+   */
+  function readDraft(orderId) {
+    var key = DRAFT_PREFIX + orderId;
+    var raw = draftGet(key);
+    if (raw === null) return null;
+    var d = parseDraft(raw);
+    if (!d || isDraftExpired(d)) { draftRemove(key); return null; }
+    var hasDescription = d.cards.some(function (c) { return c.description.trim() !== ''; });
+    return hasDescription ? d : null;
+  }
+
+  /** Replaces the card rows and the comments with the saved ones. @param {{cards: Object[], comments: string}} draft @return {void} */
+  function applyDraft(draft) {
+    rowsContainer.innerHTML = '';
+    nextRowId = 1;
+    draft.cards.forEach(function (c) { addRow(c); });
+    if (rowsContainer.querySelectorAll('.row-card').length === 0) addRow({});
+    document.getElementById('notes').value = draft.comments;
+    renumberRows();
+    updatePill();
+  }
+
+  rowsContainer.addEventListener('input', scheduleDraftSave);
+  document.getElementById('notes').addEventListener('input', scheduleDraftSave);
+  // A phone that switches app within the second after the last edit must not lose it.
+  document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') saveDraftNow(); });
+  window.addEventListener('pagehide', saveDraftNow);
+
+  var pendingDraft = null;
+
+  document.getElementById('btn-draft-continue').addEventListener('click', function () {
+    if (pendingDraft) applyDraft(pendingDraft);
+    pendingDraft = null;
+    startAutosave(currentOrder.orderId);
+    showView('1');
+  });
+  document.getElementById('btn-draft-fresh').addEventListener('click', function () {
+    pendingDraft = null;
+    draftRemove(DRAFT_PREFIX + currentOrder.orderId);
+    startAutosave(currentOrder.orderId);
+    showView('1');
+  });
+
   // ---- Submit payload -----------------------------------------------------
-  function buildPayload() {
+  /** @param {string} submitKey @return {Object} */
+  function buildPayload(submitKey) {
     var returnValueMap = { 'ship': 'return', 'psa-vault': 'psa', 'fanatics-vault': 'fanatics' };
     var returnRadio = document.querySelector('input[name="return-method"]:checked');
     var returnMethod = returnRadio ? (returnValueMap[returnRadio.value] || 'return') : 'return';
@@ -1409,6 +2009,7 @@
 
     return {
       api: 'submit',
+      submitKey: submitKey,
       order: currentOrder ? currentOrder.orderId : '',
       conf: currentOrder ? currentOrder.conf : '',
       contact: {
@@ -1420,7 +2021,7 @@
         city: val('city'),
         province: val('state'),
         zip: val('zip'),
-        country: hiddenCountry,
+        country: val('country').trim(),
         instagram: val('instagram')
       },
       returnMethod: returnMethod,
@@ -1441,133 +2042,379 @@
     };
   }
 
-  function setSubmitting(isSubmitting) {
+  /** @param {boolean} isSubmitting @param {string=} label Button text while busy (default "Submitting…"). @return {void} */
+  function setSubmitting(isSubmitting, label) {
     var btn = document.getElementById('btn-sign-submit');
     btn.disabled = isSubmitting;
-    btn.textContent = isSubmitting ? 'Submitting…' : 'Sign and submit';
+    btn.textContent = isSubmitting ? (label || 'Submitting…') : 'Sign and submit';
   }
 
+  /** Clears every highlighted field (and puts back its own error text) before a new submit attempt. @return {void} */
   function clearSubmitFieldErrors() {
-    ['signature-name', 'full-name', 'email', 'phone', 'street', 'city', 'state', 'zip', 'psa-vault', 'fanatics-vault'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) { var wrap = el.closest('.field'); if (wrap) wrap.classList.remove('has-error'); }
+    document.querySelectorAll('.field.has-error').forEach(function (wrap) {
+      wrap.classList.remove('has-error');
+      wrap.querySelectorAll('.field-error').forEach(function (err) {
+        restoreErrorText(err);
+        err.hidden = true;
+      });
     });
-    ['err-psa-vault', 'err-fanatics-vault'].forEach(function (id) {
-      var el = document.getElementById(id);
-      if (el) el.hidden = true;
-    });
-  }
-
-  function mapFieldError(path) {
-    var direct = {
-      'signature.name': ['signature-name', 'err-signature'],
-      'contact.fullName': ['full-name', 'err-full-name'],
-      'contact.email': ['email', 'err-email'],
-      'contact.phone': ['phone', 'err-phone'],
-      'contact.address1': ['street', 'err-street'],
-      'contact.city': ['city', 'err-city'],
-      'contact.province': ['state', 'err-state'],
-      'contact.zip': ['zip', 'err-zip']
-    };
-    if (direct[path]) {
-      var fieldId = direct[path][0], errId = direct[path][1];
-      var field = document.getElementById(fieldId), err = document.getElementById(errId);
-      if (field) { var wrap = field.closest('.field'); if (wrap) wrap.classList.add('has-error'); }
-      if (err) err.hidden = false;
-      return;
-    }
-    if (path === 'vaultNumber') {
-      var returnRadio = document.querySelector('input[name="return-method"]:checked');
-      var targetId = (returnRadio && returnRadio.id === 'return-fanatics') ? 'fanatics-vault' : 'psa-vault';
-      var errId2 = targetId === 'fanatics-vault' ? 'err-fanatics-vault' : 'err-psa-vault';
-      var field2 = document.getElementById(targetId), err2 = document.getElementById(errId2);
-      if (field2) { var wrap2 = field2.closest('.field'); if (wrap2) wrap2.classList.add('has-error'); }
-      if (err2) err2.hidden = false;
-      return;
-    }
-    // Code.js reports card field errors as 'cards[0]' / 'cards[0].description' (bracket notation),
-    // not the dot notation 'cards.0' this regex originally expected (integration fix 2026-09-25).
-    var cardMatch = /^cards\[(\d+)\]/.exec(path);
-    if (cardMatch) {
-      var ids = getRowIds();
-      var rowId = ids[Number(cardMatch[1])];
-      if (rowId !== undefined) {
-        var errEl = document.getElementById('row-' + rowId + '-desc-err');
-        if (errEl) { errEl.hidden = false; }
-        var descField = document.getElementById('row-' + rowId + '-desc');
-        if (descField) { var w = descField.closest('.field'); if (w) w.classList.add('has-error'); }
-      }
-    }
+    document.getElementById('err-consent').hidden = true;
   }
 
   /**
-   * Earliest screen holding a field the server rejected, or '5' when none of them is on an
-   * earlier screen. TEST v1 2026-09-27: empty card rows (screen 4) were rejected while the
-   * customer was on screen 5, where the highlights could not be seen.
-   * @param {string[]} fields Server field paths, e.g. 'contact.email', 'cards[2]'.
-   * @return {string}
+   * Highlights one field and shows its error text.
+   * @param {string} inputId
+   * @param {string} errId
+   * @param {?string} text New error text, or null to keep the field's own.
+   * @return {boolean} false when the field is not on the page.
    */
-  function screenForRejectedFields(fields) {
-    var hasContact = fields.some(function (p) { return p.indexOf('contact.') === 0 || p === 'vaultNumber'; });
-    if (hasContact) return '2';
-    var hasCard = fields.some(function (p) { return /^cards\[\d+\]/.test(p); });
-    if (hasCard) return '4';
-    return '5';
+  function showFieldError(inputId, errId, text) {
+    var field = document.getElementById(inputId);
+    var err = document.getElementById(errId);
+    if (!field || !err) return false;
+    var wrap = field.closest('.field');
+    if (wrap) wrap.classList.add('has-error');
+    if (text !== null) {
+      if (err.getAttribute('data-default') === null) err.setAttribute('data-default', err.textContent);
+      err.textContent = text;
+    }
+    err.hidden = false;
+    return true;
   }
 
-  function handleSubmitError(res) {
-    var fields = Array.isArray(res.fields) ? res.fields : [];
-    fields.forEach(mapFieldError);
-    var target = screenForRejectedFields(fields);
-    if (target !== '5') {
-      // The field's own error text explains it there; a banner left on screen 5 would still show
-      // after the customer fixes the field and comes back.
-      showView(target);
-      scrollToFirstError(target);
-      return;
+  var TOO_LONG = 'Too long (200 characters max)';
+  // Server contact.* paths: where the field is on the page (address2 is carried from the order and has no box).
+  var CONTACT_FIELD_UI = {
+    fullName: { input: 'full-name', err: 'err-full-name', label: 'Full name' },
+    email: { input: 'email', err: 'err-email', label: 'Email' },
+    phone: { input: 'phone', err: 'err-phone', label: 'Phone' },
+    instagram: { input: 'instagram', err: 'err-instagram', label: 'Instagram handle' },
+    address1: { input: 'street', err: 'err-street', label: 'Street address' },
+    address2: { input: null, err: null, label: 'Address line 2' },
+    city: { input: 'city', err: 'err-city', label: 'City' },
+    province: { input: 'state', err: 'err-state', label: 'State' },
+    zip: { input: 'zip', err: 'err-zip', label: 'ZIP' },
+    country: { input: 'country', err: 'err-country', label: 'Country' }
+  };
+  var CARD_FIELD_UI = {
+    cost: { suffix: 'cost', label: 'Your cost' },
+    rawComp: { suffix: 'rawcomp', label: 'Raw comp' },
+    gradedComp: { suffix: 'gradedcomp', label: 'Graded comp' }
+  };
+
+  /**
+   * Shows the error for one field path the server rejected.
+   * kind 'field' = an ordinary field (shown = it now has a visible error; words = plain-words text for
+   * the banner when it could not be shown), 'key' = the submit key itself, 'reload' = this page is out
+   * of date, 'generic' = nothing the customer can fix field by field.
+   * @param {string} path e.g. 'contact.email', 'cards[2].cost', 'comments', 'submitKey'.
+   * @return {{kind: string, shown: boolean, screen: string, words: string}}
+   */
+  function mapFieldError(path) {
+    var m = /^contact\.(\w+)$/.exec(path);
+    if (m) {
+      var ui = CONTACT_FIELD_UI[m[1]];
+      if (!ui) return { kind: 'field', shown: false, screen: '2', words: 'Contact details: ' + m[1] + ' could not be accepted' };
+      var shownContact = ui.input ? showFieldError(ui.input, ui.err, TOO_LONG) : false;
+      return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + ': too long (200 characters max)' };
     }
+    if (path === 'vaultNumber') {
+      var returnRadio = document.querySelector('input[name="return-method"]:checked');
+      var fanatics = !!(returnRadio && returnRadio.id === 'return-fanatics');
+      var shownVault = fanatics ? showFieldError('fanatics-vault', 'err-fanatics-vault', null) : showFieldError('psa-vault', 'err-psa-vault', null);
+      return { kind: 'field', shown: shownVault, screen: '2', words: (fanatics ? 'Fanatics Vault #' : 'PSA Vault #') + ': needed, 200 characters max' };
+    }
+    if (path === 'comments') {
+      var shownComments = showFieldError('notes', 'err-notes', 'Too long (2000 characters max)');
+      return { kind: 'field', shown: shownComments, screen: '3', words: 'Anything else we should know?: too long (2000 characters max)' };
+    }
+    if (path === 'signature.name') {
+      return { kind: 'field', shown: showFieldError('signature-name', 'err-signature', null), screen: '5', words: 'Signature: type your full name' };
+    }
+    if (path === 'signature.agreed') {
+      var consentErr = document.getElementById('err-consent');
+      if (consentErr) consentErr.hidden = false;
+      return { kind: 'field', shown: !!consentErr, screen: '5', words: 'Disclaimer: check the box to agree' };
+    }
+    // Code.js reports card field errors as 'cards[0]' / 'cards[0].description' (bracket notation),
+    // not the dot notation 'cards.0' this regex originally expected (integration fix 2026-09-25).
+    var cm = /^cards\[(\d+)\](?:\.(\w+))?$/.exec(path);
+    if (cm) {
+      var index = Number(cm[1]);
+      var cardLabel = 'Card ' + (index + 1);
+      var rowId = getRowIds()[index];
+      var sub = cm[2] || 'description';
+      if (CARD_FIELD_UI[sub]) {
+        var cf = CARD_FIELD_UI[sub];
+        var shownPrice = rowId !== undefined && showFieldError('row-' + rowId + '-' + cf.suffix, 'row-' + rowId + '-' + cf.suffix + '-err', 'Max 200 characters');
+        return { kind: 'field', shown: shownPrice, screen: '4', words: cardLabel + ' · ' + cf.label + ': too long (200 characters max)' };
+      }
+      var shownDesc = rowId !== undefined && showFieldError('row-' + rowId + '-desc', 'row-' + rowId + '-desc-err', null);
+      return { kind: 'field', shown: shownDesc, screen: '4', words: cardLabel + ' · Card description: needed, 200 characters max' };
+    }
+    if (path === 'cards') {
+      return { kind: 'field', shown: false, screen: '4', words: 'Cards: a form takes 1 to ' + MAX_CARDS + ' cards' };
+    }
+    if (path === 'returnMethod') {
+      return { kind: 'field', shown: false, screen: '2', words: 'After grading, how should we handle your cards?: pick one of the options' };
+    }
+    if (path === 'acquired') {
+      return { kind: 'field', shown: false, screen: '3', words: 'How did you acquire this collection?: an answer could not be read' };
+    }
+    if (path === 'goals') {
+      return { kind: 'field', shown: false, screen: '3', words: 'What are your goals for this submission?: an answer could not be read' };
+    }
+    if (path === 'submitKey') return { kind: 'key', shown: false, screen: '5', words: '' };
+    if (path === 'disclaimerVersion') return { kind: 'reload', shown: false, screen: '5', words: '' };
+    return { kind: 'generic', shown: false, screen: '5', words: '' };
+  }
+
+  /** @return {void} */
+  function showSubmitBanner(text) {
     var banner = document.getElementById('submit-error');
-    banner.textContent = res.message || ERROR_MESSAGES[res.error] || ERROR_MESSAGES.server;
+    renderMessage(banner, text);
     banner.hidden = false;
     banner.scrollIntoView({ behavior: 'auto', block: 'center' });
   }
 
+  /**
+   * Shows what the server rejected. Fields that are on the page get their own error text (and the
+   * customer is taken to the earliest screen holding one); anything that cannot be shown on a field is
+   * listed in the banner in plain words. The submit key stays, except when the server rejected the key
+   * itself (a validation answer never records a submission, so a new key is safe).
+   * @param {Object} res
+   * @return {void}
+   */
+  function handleSubmitError(res) {
+    var fields = Array.isArray(res.fields) ? res.fields : [];
+    var results = fields.map(mapFieldError);
+    var keyRejected = results.some(function (r) { return r.kind === 'key'; });
+    var needsReload = results.some(function (r) { return r.kind === 'reload'; });
+    if (keyRejected && currentOrder) dropSubmitKey(currentOrder.orderId);
+
+    var unshown = results.filter(function (r) { return r.kind === 'field' && !r.shown; });
+    if (results.length > 0 && unshown.length === 0 && !keyRejected && !needsReload && !results.some(function (r) { return r.kind === 'generic'; })) {
+      var target = results.reduce(function (min, r) { return r.screen < min ? r.screen : min; }, '5');
+      if (target !== '5') {
+        // The field's own error text explains it there; a banner left on screen 5 would still show
+        // after the customer fixes the field and comes back.
+        showView(target);
+        scrollToFirstError(target);
+        return;
+      }
+    }
+
+    var parts = [];
+    if (needsReload) parts.push('This form has been updated. Please reload this page and try again.');
+    if (keyRejected) parts.push('Something went wrong with this submission. Please press Sign and submit again.');
+    if (unshown.length > 0) {
+      parts.push('Please check: ' + results.filter(function (r) { return r.kind === 'field'; }).map(function (r) { return r.words; }).join('; ') + '.');
+    }
+    if (parts.length === 0) parts.push(errorText(res.error, res.message));
+    showSubmitBanner(parts.join(' '));
+  }
+
+  var submitInFlight = false;
+
+  /** @param {*} res @return {boolean} true when the server's answer is a readable {ok: boolean, ...} object. */
+  function isSubmitResponse(res) {
+    return !!res && typeof res === 'object' && typeof res.ok === 'boolean';
+  }
+
+  /**
+   * After a lost or unreadable submit response: asks api=status up to three times (about 1 s, 2 s and
+   * 4 s apart) whether the server holds a submission for this key. The key is never dropped here, and
+   * a "not_found" answer does not end the attempt (the submit may still be running on the server).
+   * @param {string} orderId
+   * @param {string} conf
+   * @param {string} key
+   * @return {Promise<{ok: boolean, submissionId?: string, cardCount?: number, error?: string}>}
+   */
+  function confirmViaStatus(orderId, conf, key) {
+    var attempt = 0;
+    function next() {
+      if (attempt >= STATUS_RETRY_DELAYS_MS.length) return Promise.resolve({ ok: false, error: 'unconfirmed', message: UNCONFIRMED_MESSAGE });
+      var delay = STATUS_RETRY_DELAYS_MS[attempt];
+      attempt++;
+      return wait(delay).then(function () {
+        return apiGet('status', { order: orderId, conf: conf, key: key });
+      }).then(function (res) {
+        if (res && res.ok === true && res.status === 'submitted') {
+          return { ok: true, submissionId: res.submissionId, cardCount: res.cardCount };
+        }
+        return next();
+      }, function (err) {
+        console.warn('Status check failed:', err);
+        return next();
+      });
+    }
+    return next();
+  }
+
+  /**
+   * An ok:true answer (a replay included) ends the attempt.
+   * @param {Object} res
+   * @param {boolean=} editsNotIncluded true when the answer is the FIRST submission and the customer had
+   *   edited the form after it: the thank-you screen then says so and shows nothing from the edited fields.
+   * @return {void}
+   */
+  function onSubmitSuccess(res, editsNotIncluded) {
+    lastSubmissionResponse = res;
+    lastSubmissionResponse.editsNotIncluded = editsNotIncluded === true;
+    dropSubmitKey(currentOrder ? currentOrder.orderId : null);
+    discardDraft();
+    showView('6');
+  }
+
+  /** @param {string} message The banner text. @return {void} Ends the attempt in progress and shows the message; the key, fingerprint and data stay. */
+  function endAttemptWithMessage(message) {
+    submitInFlight = false;
+    setSubmitting(false);
+    showSubmitBanner(message);
+  }
+
+  /**
+   * The customer pressed Submit with contents that differ from the ones the held key was first sent with,
+   * i.e. an earlier attempt was never resolved and the form was edited since. Nothing is sent until
+   * api=status has said what the held key did: "submitted" -> the first submission stands (shown from
+   * the server's answer, with the edits flagged as not included); "not_found" -> the old key is dropped
+   * and the edited contents go out under a new one; no usable answer -> "couldn't confirm", nothing sent,
+   * key + fingerprint + data kept.
+   * @param {string} orderId
+   * @param {string} conf
+   * @param {Object} payload Built from the current fields (no key yet).
+   * @param {string} fp Its fingerprint.
+   * @param {{key: string, fp: string}} held
+   * @return {void}
+   */
+  function settleEditedAttempt(orderId, conf, payload, fp, held) {
+    setSubmitting(true, 'Checking…');
+    apiGet('status', { order: orderId, conf: conf, key: held.key }).then(function (res) {
+      if (res && res.ok === true && res.status === 'submitted') {
+        submitInFlight = false;
+        setSubmitting(false);
+        onSubmitSuccess({ ok: true, submissionId: res.submissionId, cardCount: res.cardCount }, true);
+      } else if (res && res.ok === true && res.status === 'not_found') {
+        dropSubmitKey(orderId);
+        sendSubmission(orderId, conf, payload, holdNewSubmitKey(orderId, fp));
+      } else {
+        console.warn('Unusable status answer:', res);
+        endAttemptWithMessage(UNCONFIRMED_MESSAGE);
+      }
+    }, function (err) {
+      console.warn('Status check failed:', err);
+      endAttemptWithMessage(UNCONFIRMED_MESSAGE);
+    }).catch(function (err) {
+      console.error(err);
+      submitInFlight = false;
+      setSubmitting(false);
+      showSubmitBanner(errorText('server', null));
+    });
+  }
+
   document.getElementById('btn-sign-submit').addEventListener('click', function () {
+    if (submitInFlight || !currentOrder) return;
     if (!validateScreen5()) return;
     document.getElementById('submit-error').hidden = true;
     clearSubmitFieldErrors();
-    var payload = buildPayload();
+    var orderId = currentOrder.orderId;
+    var conf = currentOrder.conf;
+    var payload = buildPayload('');
+    var fp = fingerprintPayload(payload);
+    var held = readHeldSubmit(orderId);
+    submitInFlight = true;
+    if (!held) sendSubmission(orderId, conf, payload, holdNewSubmitKey(orderId, fp));
+    else if (held.fp === fp) sendSubmission(orderId, conf, payload, held.key);
+    else settleEditedAttempt(orderId, conf, payload, fp, held);
+  });
+
+  /**
+   * Sends the payload under `key` and routes the answer. A lost or unreadable answer is settled through
+   * api=status (confirmViaStatus); the key stays held until an ok:true answer arrives.
+   * @param {string} orderId
+   * @param {string} conf
+   * @param {Object} payload
+   * @param {string} key
+   * @return {void}
+   */
+  function sendSubmission(orderId, conf, payload, key) {
+    payload.submitKey = key;
+    submitInFlight = true;
     setSubmitting(true);
     apiPost(payload).then(function (res) {
+      if (isSubmitResponse(res)) return res;
+      console.warn('Unreadable submit response:', res);
+      setSubmitting(true, 'Checking…');
+      return confirmViaStatus(orderId, conf, key);
+    }, function (err) {
+      console.warn('Submit request failed:', err);
+      setSubmitting(true, 'Checking…');
+      return confirmViaStatus(orderId, conf, key);
+    }).then(function (res) {
+      submitInFlight = false;
       setSubmitting(false);
-      if (res && res.ok) {
-        lastSubmissionResponse = res;
-        showView('6');
-      } else {
-        handleSubmitError(res || {});
-      }
-    }).catch(function () {
+      if (res.ok) onSubmitSuccess(res);
+      else if (res.error === 'unconfirmed') showSubmitBanner(UNCONFIRMED_MESSAGE);
+      else handleSubmitError(res);
+    }).catch(function (err) {
+      console.error(err);
+      submitInFlight = false;
       setSubmitting(false);
-      handleSubmitError({ error: 'network', message: ERROR_MESSAGES.network });
+      showSubmitBanner(errorText('server', null));
     });
-  });
+  }
 
   // ---- Screen 6 summary ---------------------------------------------------
   var lastSubmissionResponse = null;
 
+  /**
+   * Screen 6 has two variants: the thank-you after a submit, and "we already have your form".
+   * @param {boolean} already
+   * @return {void}
+   */
+  function setDoneVariant(already) {
+    document.getElementById('summary-line').hidden = already;
+    document.getElementById('sent-to-line').hidden = already;
+    document.getElementById('done-questions').hidden = already;
+    document.getElementById('done-change').hidden = !already;
+    var doneSub = document.getElementById('done-sub');
+    doneSub.hidden = true;
+    doneSub.classList.remove('is-notice');
+    if (!already) document.getElementById('btn-submit-again').hidden = true;
+  }
+
+  /**
+   * The thank-you screen. When the answer is the FIRST submission and the form was edited after it
+   * (lastSubmissionResponse.editsNotIncluded), everything here comes from the server's answer and the
+   * order itself — card count from `cardCount`, no return method, no entered email — and the
+   * "Your first submission went through…" line sits under the heading.
+   * @return {void}
+   */
   function updateSummary() {
+    setDoneVariant(false);
+    var editsNotIncluded = !!(lastSubmissionResponse && lastSubmissionResponse.editsNotIncluded);
     var rows = rowsContainer.querySelectorAll('.row-card');
-    var count = (lastSubmissionResponse && lastSubmissionResponse.cardCount) || rows.length;
+    var serverCount = lastSubmissionResponse && lastSubmissionResponse.cardCount;
+    var count = serverCount || (editsNotIncluded ? 0 : rows.length);
     // The services are what the order paid for (its lines); cards carry no service of their own.
     var serviceLabel = currentOrder ? formatServices(currentOrder.lines) : '';
     var returnLabel = 'Return ship after grading';
     if (document.getElementById('return-psa').checked) returnLabel = 'Send to PSA Vault after grading';
     if (document.getElementById('return-fanatics').checked) returnLabel = 'Send to Fanatics Collect Vault after grading';
     var orderName = currentOrder ? currentOrder.name : '';
-    var line = orderName + ' · ' + count + ' card' + (count === 1 ? '' : 's') + ' · ' + serviceLabel + ' · ' + returnLabel;
-    document.getElementById('summary-line').textContent = line;
+    var parts = [orderName];
+    if (count > 0) parts.push(count + ' card' + (count === 1 ? '' : 's'));
+    parts.push(serviceLabel);
+    if (!editsNotIncluded) parts.push(returnLabel);
+    document.getElementById('summary-line').textContent = parts.join(' · ');
     var firstName = currentOrder ? currentOrder.firstName : '';
     document.getElementById('done-heading').textContent = 'Thank you, ' + firstName + '. Your submission is complete.';
+    var doneSub = document.getElementById('done-sub');
+    if (editsNotIncluded) {
+      renderMessage(doneSub, EDITS_NOT_INCLUDED_MESSAGE);
+      doneSub.classList.add('is-notice');
+      doneSub.hidden = false;
+    }
 
     // The "sent to" line and "try another sample order" are both only true/applicable in test
     // mode: sendNotifications_ never mails the address typed into the form when mode==='test'
@@ -1585,6 +2432,8 @@
       emailSpan.textContent = val('email');
       sentToLine.appendChild(emailSpan);
       sentToLine.appendChild(document.createTextNode('.'));
+      // The email field may have been edited after the first submission: don't name an address the copy may not have gone to.
+      if (editsNotIncluded) sentToLine.hidden = true;
     }
     document.getElementById('btn-start-over').hidden = (mode !== 'test');
   }
@@ -1615,10 +2464,9 @@
   });
 
   // ---- Order lookup / prefill -------------------------------------------
-  var mode = 'test';
   var currentOrder = null; // {orderId, conf, name, firstName, cardCount, lines}
+  var activeOrderId = null; // the order the page is showing, form or already-submitted screen
   var hiddenAddress2 = '';
-  var hiddenCountry = 'US';
   var lastLookup = null;
 
   /** @param {{service: string, quantity: number}} line @return {string} e.g. "STANDARD × 12". */
@@ -1626,7 +2474,7 @@
     return line.service + ' × ' + line.quantity;
   }
 
-  /** The order's services, summed per service level over its lines, e.g. "STANDARD × 12, RUSH × 1". */
+  /** The order's services, summed per service level over its lines, e.g. "STANDARD × 12, RUSH × 1". @param {Object[]} lines @return {string} */
   function formatServices(lines) {
     var totals = [];
     lines.forEach(function (line) {
@@ -1637,6 +2485,7 @@
     return totals.map(formatServicePart).join(', ');
   }
 
+  /** @param {Object} order @return {string} */
   function formatOrderLine(order) {
     var groups = [];
     order.lines.forEach(function (line) {
@@ -1651,12 +2500,26 @@
     return groups.map(function (g) { return g.product + ' — ' + g.parts.join(', '); }).join(', ');
   }
 
+  /** @return {void} */
   function resetScreen3() {
     document.querySelectorAll('#screen-3 input[type="radio"], #screen-3 input[type="checkbox"]').forEach(function (i) { i.checked = false; });
     document.getElementById('notes').value = '';
   }
 
+  /**
+   * Fills the form from the server's order: contact boxes from order.address / order.customer, one
+   * empty card row per paid card, and a clean slate for everything the customer enters.
+   * @param {Object} order
+   * @param {string} orderId
+   * @param {string} conf
+   * @return {void}
+   */
   function prefillFromOrder(order, orderId, conf) {
+    // No autosave until the customer has answered the "continue where you left off?" question.
+    pauseAutosave();
+    pendingDraft = null;
+    clearSubmitFieldErrors();
+
     currentOrder = {
       orderId: orderId,
       conf: conf,
@@ -1670,12 +2533,13 @@
     document.getElementById('email').value = order.customer.email || '';
     document.getElementById('phone').value = order.customer.phone || '';
     document.getElementById('instagram').value = '';
-    document.getElementById('street').value = order.shippingAddress.address1 || '';
-    document.getElementById('city').value = order.shippingAddress.city || '';
-    document.getElementById('state').value = order.shippingAddress.province || '';
-    document.getElementById('zip').value = order.shippingAddress.zip || '';
-    hiddenAddress2 = order.shippingAddress.address2 || '';
-    hiddenCountry = order.shippingAddress.country || 'US';
+    document.getElementById('street').value = order.address.address1 || '';
+    document.getElementById('city').value = order.address.city || '';
+    document.getElementById('state').value = order.address.province || '';
+    document.getElementById('zip').value = order.address.zip || '';
+    document.getElementById('country').value = order.address.country || 'US';
+    hiddenAddress2 = clip(order.address.address2);
+    applyCountryRules();
 
     document.getElementById('return-ship').checked = true;
     revealPsa.hidden = true;
@@ -1692,10 +2556,11 @@
     document.getElementById('order-card-line').innerHTML = '<span class="dot">&#9679;</span> ' + escapeAttr(order.name) + ' · ' + escapeAttr(formatOrderLine(order));
 
     buildCardRowsFromOrder(order);
+    var startedRows = rowsContainer.querySelectorAll('.row-card').length;
     var cardWord = order.cardCount === 1 ? 'card' : 'cards';
-    var rowWord = order.cardCount === 1 ? 'row' : 'rows';
+    var rowWord = startedRows === 1 ? 'row' : 'rows';
     document.getElementById('screen4-intro').textContent =
-      'Your order has ' + order.cardCount + ' ' + cardWord + ', so we started with ' + order.cardCount + ' ' + rowWord +
+      'Your order has ' + order.cardCount + ' ' + cardWord + ', so we started with ' + startedRows + ' ' + rowWord +
       '. One row per card. The three cost basis fields are optional.';
 
     consentCheckbox.checked = false;
@@ -1707,30 +2572,101 @@
     lastSubmissionResponse = null;
   }
 
+  /**
+   * @param {?string} code
+   * @param {?string} message The server's own text, when it sent one.
+   * @return {void}
+   */
   function showOrderError(code, message) {
     showView('order-error');
-    var box = document.getElementById('order-error-message');
-    box.textContent = message || ERROR_MESSAGES[code] || ERROR_MESSAGES.server;
+    renderMessage(document.getElementById('order-error-message'), errorText(code, message));
     document.getElementById('btn-order-error-picker').hidden = (mode !== 'test');
+    document.getElementById('btn-order-error-retry').hidden = NO_RETRY_CODES.indexOf(code) !== -1;
   }
 
+  /** @type {?{order: Object, orderId: string, conf: string}} */
+  var submittedAgain = null;
+
+  /**
+   * "We already have your prep form": screen 6 without the summary card and the "copy sent to" line.
+   * The live answer carries no personal data (only the order name and when it was received); in test
+   * mode the full order comes with it, so the page can offer "Submit again (test only)".
+   * @param {Object} order
+   * @param {string} orderId
+   * @param {string} conf
+   * @return {void}
+   */
+  function showAlreadySubmitted(order, orderId, conf) {
+    currentOrder = null;
+    pauseAutosave();
+    setDoneVariant(true);
+    document.getElementById('done-heading').textContent = 'We already have your prep form for order ' + order.name;
+    var when = order.submittedAt ? formatLocalDateTime(order.submittedAt) : '';
+    var sub = document.getElementById('done-sub');
+    sub.textContent = when ? '(received ' + when + ')' : '';
+    sub.hidden = !when;
+    var canResubmit = mode === 'test' && !!order.customer && !!order.address && Array.isArray(order.lines);
+    submittedAgain = canResubmit ? { order: order, orderId: orderId, conf: conf } : null;
+    document.getElementById('btn-submit-again').hidden = !canResubmit;
+    document.getElementById('btn-start-over').hidden = (mode !== 'test');
+    showView('submitted');
+  }
+
+  /** @param {Object} order The server's order. @param {string} orderId @param {string} conf @return {void} */
+  function routeOrder(order, orderId, conf) {
+    dropOtherSubmitKeys(orderId);
+    activeOrderId = orderId;
+    if (order.alreadySubmitted === true) {
+      showAlreadySubmitted(order, orderId, conf);
+      return;
+    }
+    prefillFromOrder(order, orderId, conf);
+    enterForm(orderId);
+  }
+
+  /**
+   * Opens the form for an order that is already prefilled: first the "Continue where you left off?"
+   * question when a saved draft exists, else screen 1 with autosave on.
+   * @param {string} orderId
+   * @return {void}
+   */
+  function enterForm(orderId) {
+    var draft = readDraft(orderId);
+    if (draft) {
+      pendingDraft = draft;
+      document.getElementById('draft-saved').textContent = '(saved ' + formatLocalDateTime(draft.savedAt) + ')';
+      showView('draft');
+      return;
+    }
+    startAutosave(orderId);
+    showView('1');
+  }
+
+  /** @param {string} orderId @param {string} conf @return {void} */
   function loadOrder(orderId, conf) {
     lastLookup = { order: orderId, conf: conf };
     showView('loading');
     document.getElementById('loading-message').textContent = 'One moment while we load your order.';
     apiGet('order', { order: orderId, conf: conf }).then(function (res) {
-      if (res && res.ok) {
-        prefillFromOrder(res.order, orderId, conf);
-        showView('1');
+      if (res && res.ok === true && res.order) {
+        routeOrder(res.order, orderId, conf);
       } else {
         showOrderError(res && res.error, res && res.message);
       }
-    }).catch(function () {
-      showOrderError('network', ERROR_MESSAGES.network);
+    }, function (err) {
+      console.warn('Order lookup failed:', err);
+      showOrderError('network', null);
+    }).catch(function (err) {
+      console.error(err);
+      showOrderError('server', null);
     });
   }
 
+  /** Test mode only: the live form has no sample picker. @return {void} */
   function showPicker() {
+    if (mode !== 'test') { showNoLink(); return; }
+    // Choosing a sample leaves the order link behind: a reload must not reopen it.
+    sessionRemove(LINK_STORAGE_KEY);
     showView('picker');
     var list = document.getElementById('samples-list');
     var empty = document.getElementById('samples-empty');
@@ -1762,21 +2698,46 @@
         card.appendChild(btn);
         list.appendChild(card);
       });
-    }).catch(function () {
+    }, function (err) {
+      console.warn('Sample list failed:', err);
       empty.hidden = false;
       empty.textContent = ERROR_MESSAGES.network;
     });
   }
 
+  /** @return {void} */
+  function showNoLink() {
+    renderMessage(document.getElementById('no-link-message'), NO_LINK_MESSAGE);
+    showView('no-link');
+  }
+
+  /** @return {void} */
+  function showUnavailable() {
+    renderMessage(document.getElementById('unavailable-message'), UNAVAILABLE_MESSAGE);
+    showView('unavailable');
+  }
+
   document.getElementById('btn-order-error-retry').addEventListener('click', function () {
     if (lastLookup) loadOrder(lastLookup.order, lastLookup.conf);
-    else showPicker();
+    else init();
   });
   document.getElementById('btn-order-error-picker').addEventListener('click', function () { showPicker(); });
 
   document.getElementById('btn-start-over').addEventListener('click', function () {
+    dropSubmitKey(activeOrderId);
     currentOrder = null;
+    submittedAgain = null;
+    activeOrderId = null;
     showPicker();
+  });
+
+  // Test only: continue into the form with the full order the server sent, with a fresh key.
+  document.getElementById('btn-submit-again').addEventListener('click', function () {
+    if (!submittedAgain) return;
+    var again = submittedAgain;
+    dropSubmitKey(again.orderId);
+    prefillFromOrder(again.order, again.orderId, again.conf);
+    enterForm(again.orderId);
   });
 
   // ---- Navigation buttons ---------------------------------------------
@@ -1800,21 +2761,33 @@
   document.getElementById('btn-back-5').addEventListener('click', function () { showView('4'); });
 
   // ---- Entry point --------------------------------------------------------
+  /** @return {void} */
   function init() {
-    if (!API_BASE) { showView('setup'); return; }
+    if (!API_BASE) { if (onStoreHost) showUnavailable(); else showView('setup'); return; }
+    sweepOldDrafts();
     showView('loading');
     document.getElementById('loading-message').textContent = 'One moment…';
     apiGet('ping', {}).then(function (res) {
-      if (!res || !res.ok) { showOrderError('network', ERROR_MESSAGES.network); return; }
-      mode = res.mode || 'test';
-      var orderId = getParam('order');
-      var conf = getParam('conf');
-      if (orderId && conf) {
-        loadOrder(orderId, conf);
-      } else {
-        showPicker();
+      if (!res || res.ok !== true || (res.mode !== 'test' && res.mode !== 'live')) {
+        showOrderError('network', null);
+        return;
       }
-    }).catch(function () { showOrderError('network', ERROR_MESSAGES.network); });
+      mode = res.mode;
+      // A store page never runs against the test server.
+      if (onStoreHost && mode === 'test') { showUnavailable(); return; }
+      applyModeUi();
+      var link = resolveLink();
+      if (link.status === 'ok') loadOrder(link.order, link.conf);
+      else if (link.status === 'bad') showOrderError('not_found', null);
+      else if (mode === 'test') showPicker();
+      else showNoLink();
+    }, function (err) {
+      console.warn('Ping failed:', err);
+      showOrderError('network', null);
+    }).catch(function (err) {
+      console.error(err);
+      showOrderError('server', null);
+    });
   }
 
   init();
