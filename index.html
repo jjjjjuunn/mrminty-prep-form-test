@@ -758,7 +758,7 @@
     <!-- Screen 1 -->
     <section class="screen" id="screen-1" data-screen="1" hidden>
       <h1 class="screen-title">Let's get started!</h1>
-      <p class="screen-body">Thanks for your order, <span id="greeting-name">there</span>. This form takes about 5 minutes and replaces the spreadsheet. It tells us which cards are coming and how you'd like them returned.</p>
+      <p class="screen-body">Thanks for your order<span id="greeting-name"></span>. This form takes about 5 minutes and replaces the spreadsheet. It tells us which cards are coming and how you'd like them returned.</p>
       <p class="order-card" id="order-card-line"></p>
 
       <div class="need-grid">
@@ -2407,8 +2407,11 @@
     parts.push(serviceLabel);
     if (!editsNotIncluded) parts.push(returnLabel);
     document.getElementById('summary-line').textContent = parts.join(' · ');
-    var firstName = currentOrder ? currentOrder.firstName : '';
-    document.getElementById('done-heading').textContent = 'Thank you, ' + firstName + '. Your submission is complete.';
+    // The order's customer may have no first name (customer.firstName is '' then) — no dangling comma.
+    var firstName = String((currentOrder && currentOrder.firstName) || '').trim();
+    document.getElementById('done-heading').textContent = firstName
+      ? 'Thank you, ' + firstName + '. Your submission is complete.'
+      : 'Thank you. Your submission is complete.';
     var doneSub = document.getElementById('done-sub');
     if (editsNotIncluded) {
       renderMessage(doneSub, EDITS_NOT_INCLUDED_MESSAGE);
@@ -2524,7 +2527,7 @@
       orderId: orderId,
       conf: conf,
       name: order.name,
-      firstName: order.customer.firstName || 'there',
+      firstName: order.customer.firstName,
       cardCount: order.cardCount,
       lines: order.lines
     };
@@ -2549,7 +2552,9 @@
     document.getElementById('consignment-interest').checked = false;
     resetScreen3();
 
-    document.getElementById('greeting-name').textContent = order.customer.firstName || 'there';
+    // ", Sam" or nothing — an order without a first name reads "Thanks for your order."
+    var greetingName = String(order.customer.firstName || '').trim();
+    document.getElementById('greeting-name').textContent = greetingName ? ', ' + greetingName : '';
     // order.name and each line's product title are server-returned strings; escape them before
     // interpolating into innerHTML rather than trusting them, even though today's ?api=order only
     // ever returns the hardcoded sampleOrders_() list in test mode (security review 2026-09-25).
