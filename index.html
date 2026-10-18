@@ -13,9 +13,17 @@
     --color-border: #e2e0d9;
     --color-ink: #17181a;
     --color-ink-muted: #53565a;
-    --color-accent: #00b2a9;
+    --color-accent: #00c4b4;
     --color-accent-ink: #00443f;
     --color-accent-soft: #e0f5f3;
+    /* Brand mint, PANTONE 3265 C (the color named in Steve's logo file), with black text on it as in
+       his "3265c background" logo rule. Selected choices use it in both themes. */
+    --color-mint: #00c4b4;
+    --color-on-mint: #050505;
+    /* Logo colors from Steve's logo rules (10/16): white background. */
+    --logo-mr: #00c4b4;
+    --logo-minty: #050505;
+    --logo-diamond: #00c4b4;
     --color-success: #1f8a55;
     --color-success-soft: #e5f5ec;
     --color-danger: #b3261e;
@@ -40,6 +48,10 @@
       --color-accent: #2bd8cb;
       --color-accent-ink: #d7faf7;
       --color-accent-soft: #113531;
+      /* Steve's logo rules: black, grey or dark background. */
+      --logo-mr: #fcfcfc;
+      --logo-minty: #00c4b4;
+      --logo-diamond: #00c4b4;
       --color-success: #45cf8c;
       --color-success-soft: #103524;
       --color-danger: #ff7a72;
@@ -58,6 +70,9 @@
     --color-accent: #2bd8cb;
     --color-accent-ink: #d7faf7;
     --color-accent-soft: #113531;
+    --logo-mr: #fcfcfc;
+    --logo-minty: #00c4b4;
+    --logo-diamond: #00c4b4;
     --color-success: #45cf8c;
     --color-success-soft: #103524;
     --color-danger: #ff7a72;
@@ -79,7 +94,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .step-indicator, .btn, .brand-wordmark, .tile, .option-title, .section-heading, .pill {
+  h1, h2, h3, .step-indicator, .btn, .tile, .option-title, .section-heading, .pill {
     font-family: var(--font-display);
   }
 
@@ -120,25 +135,29 @@
     padding-bottom: 48px;
   }
 
+  /* The space above the logo copies mrminty.com: header bar to the page's first line is 36px on a
+     phone and 48px from 768px up (measured 2026-10-18, Steve: "Please mimic website"). */
   .app-header {
-    padding-top: 20px;
+    padding-top: 36px;
     padding-bottom: 12px;
-    position: sticky;
-    top: 0;
-    background: var(--color-bg);
-    z-index: 5;
+  }
+  @media (min-width: 768px) {
+    .app-header { padding-top: 48px; }
   }
 
-  .brand-wordmark {
-    font-weight: 700;
-    font-style: italic;
-    font-size: 22px;
-    letter-spacing: 0.01em;
-    color: var(--color-ink);
-    margin: 0 0 6px;
+  /* Steve's stacked logo (10/16 .ai file), inline so it needs no extra request. */
+  .brand-logo {
+    display: block;
+    height: 48px;
+    width: auto;
+    margin: 0 0 14px;
   }
-
-  .brand-wordmark span { color: var(--color-accent); }
+  @media (min-width: 768px) {
+    .brand-logo { height: 60px; }
+  }
+  .brand-logo .logo-mr { fill: var(--logo-mr); }
+  .brand-logo .logo-minty { fill: var(--logo-minty); }
+  .brand-logo .logo-diamond { stroke: var(--logo-diamond); }
 
   .header-row {
     display: flex;
@@ -216,8 +235,22 @@
     gap: 12px;
     margin-bottom: 28px;
   }
-  @media (min-width: 640px) {
-    .need-grid { grid-template-columns: repeat(3, 1fr); }
+  @media (min-width: 480px) {
+    .need-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (min-width: 860px) {
+    .need-grid { grid-template-columns: repeat(4, 1fr); }
+  }
+
+  /* "Tell us your collecting story" sits under the four cells on screen 1. */
+  .story-block {
+    padding-top: 24px;
+    border-top: 1px solid var(--color-border);
+  }
+  .story-title {
+    font-size: 22px;
+    line-height: 1.2;
+    margin: 0 0 8px;
   }
 
   .need-item {
@@ -254,8 +287,6 @@
   }
   .btn-secondary:hover { background: var(--color-surface-alt); }
   .btn-block { width: 100%; display: block; text-align: center; }
-
-  .start-screen-cta { margin-top: 8px; }
 
   .screen-footer {
     display: flex;
@@ -333,10 +364,17 @@
   .field.has-error textarea { border-color: var(--color-danger); }
 
   .option-list { display: grid; gap: 10px; margin-top: 10px; }
+  /* Three across: each card is two rows of the list's grid (subgrid) — row 1 the option box, row 2 the
+     vault-number field when it is open — so the three option boxes are always the same height, like the
+     screen 1 tiles (Russell 10/18). */
   @media (min-width: 860px) {
-    .option-list { grid-template-columns: repeat(3, 1fr); align-items: start; }
+    .option-list { grid-template-columns: repeat(3, 1fr); row-gap: 0; }
+    .option-card { display: grid; grid-row: span 2; grid-template-rows: subgrid; }
   }
   .option-card { position: relative; }
+  /* No visible radio dot: the card itself shows the choice, with a tick when selected, like the screen 1
+     tiles (Russell 10/18). The radio stays in place for the keyboard and screen readers; clicks go
+     through the label. */
   .option-card input[type="radio"] {
     position: absolute;
     top: 16px;
@@ -344,20 +382,41 @@
     width: 18px;
     height: 18px;
     margin: 0;
+    opacity: 0;
+    pointer-events: none;
   }
-  .option-card label {
-    display: block;
-    padding: 14px 16px 14px 46px;
+  /* Only the option's own label (the input's next sibling) is the card; the vault-number label inside
+     .option-reveal stays a plain field label. */
+  .option-card > label {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 14px 44px 14px 16px;
     border: 1.5px solid var(--color-border);
     border-radius: var(--radius-md);
     background: var(--color-surface);
     cursor: pointer;
   }
-  .option-card input[type="radio"]:checked ~ label {
-    border-color: var(--color-accent);
-    background: var(--color-accent-soft);
+  .option-card > label .tick {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    color: var(--color-on-mint);
+    visibility: hidden;
   }
-  .option-card input[type="radio"]:focus-visible ~ label {
+  .option-card input[type="radio"]:checked + label .tick { visibility: visible; }
+  /* Selected = filled with brand mint, black text (Steve 10/16, PMS 3265 C). */
+  .option-card input[type="radio"]:checked + label {
+    border-color: var(--color-mint);
+    background: var(--color-mint);
+    color: var(--color-on-mint);
+  }
+  .option-card input[type="radio"]:checked + label .option-helper { color: var(--color-on-mint); }
+  .option-card input[type="radio"]:focus-visible + label {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
@@ -380,9 +439,12 @@
   @media (min-width: 640px) {
     .tile-grid { grid-template-columns: repeat(3, 1fr); }
   }
-  .tile { position: relative; }
+  /* Flex so the label box fills its grid cell: every tile in a row is as tall as the tallest one
+     (the two-line Freshy tile was taller than its neighbours — Russell 10/18). */
+  .tile { position: relative; display: flex; }
   .tile input { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; margin: 0; cursor: pointer; }
   .tile label {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -397,16 +459,20 @@
     cursor: pointer;
   }
   .tile input:checked ~ label {
-    border-color: var(--color-accent);
-    background: var(--color-accent-soft);
-    color: var(--color-accent-ink);
+    border-color: var(--color-mint);
+    background: var(--color-mint);
+    color: var(--color-on-mint);
   }
   .tile input:focus-visible ~ label {
     outline: 2px solid var(--color-accent);
     outline-offset: 2px;
   }
-  .tile .tick { width: 16px; height: 16px; flex: none; color: var(--color-accent); visibility: hidden; }
+  .tile .tick { width: 16px; height: 16px; flex: none; color: var(--color-on-mint); visibility: hidden; }
   .tile input:checked ~ label .tick { visibility: visible; }
+  /* Two-line choice: a bold name over a short explanation ("Freshy" / "New to the Hobby 0-3 months"). */
+  .tile-text { display: flex; flex-direction: column; gap: 2px; }
+  .tile-main { font-weight: 700; }
+  .tile-sub { font-weight: 500; font-size: 13px; }
 
   .pill {
     display: inline-block;
@@ -421,17 +487,17 @@
 
   .cards-table { margin-top: 12px; }
 
-  /* One row per card: # | card description (one open box) | three cost basis boxes | remove.
-     The six card-info boxes are now one, so the row fits without sideways scrolling. */
+  /* One row per card: # | card description (one open box) | two cost basis boxes | remove.
+     GRADED COMP is not asked: Steve fills it in on his side (10/16). */
   .row-head-grid,
   .row-card {
-    grid-template-columns: 28px minmax(0, 1fr) repeat(3, 112px) 28px;
+    grid-template-columns: 28px minmax(0, 1fr) repeat(2, 112px) 28px;
     column-gap: 10px;
   }
 
   .row-head {
     position: sticky;
-    top: 96px;
+    top: 0;
     z-index: 2;
     background: var(--color-bg);
     padding-bottom: 8px;
@@ -455,11 +521,11 @@
     text-transform: none;
     letter-spacing: 0;
   }
-  /* "Cost basis" spans the three price columns; its labels sit right above the boxes. */
+  /* "Cost basis" spans the two price columns; its labels sit right above the boxes. */
   .head-cost {
-    grid-column: 3 / span 3;
+    grid-column: 3 / span 2;
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     column-gap: 10px;
     row-gap: 4px;
   }
@@ -480,7 +546,7 @@
     padding: 10px 12px;
     margin-bottom: 8px;
   }
-  /* The three price boxes are direct columns of the row on wide screens. */
+  /* The two price boxes are direct columns of the row on wide screens. */
   .cost-basis { display: contents; }
   .cost-basis-legend { display: none; }
 
@@ -518,7 +584,7 @@
   }
   .row-remove:hover { color: var(--color-danger); border-color: var(--color-danger); }
 
-  /* Narrow screens: the description takes the full row, the three cost basis boxes share one
+  /* Narrow screens: the description takes the full row, the two cost basis boxes share one
      row below it, and each box carries its own visible label instead of the column header. */
   @media (max-width: 719px) {
     .row-head { position: static; padding-bottom: 6px; }
@@ -533,7 +599,7 @@
       display: grid;
       grid-column: 1 / -1;
       grid-row: 3;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       column-gap: 8px;
     }
     .cost-basis-legend {
@@ -602,6 +668,7 @@
   }
   .step-item h3 { margin: 2px 0 4px; font-size: 15px; }
   .step-item p { margin: 0; font-size: 13.5px; color: var(--color-ink-muted); line-height: 1.5; }
+  .step-item .checklist { margin: 8px 0 0; }
 
   .address-block {
     background: var(--color-surface-alt);
@@ -687,7 +754,32 @@
 <div class="banner" id="test-banner" hidden>TEST VERSION — sample orders only. Nothing you enter reaches a customer.</div>
 <div class="shell">
   <header class="app-header">
-    <p class="brand-wordmark">Mr. <span>Minty</span></p>
+    <svg class="brand-logo" viewBox="819.5 460.5 281 159" focusable="false" role="img" aria-label="Mr. Minty">
+    <defs><clipPath id="mm-logo-clip"><path d="M 981 459 L 1103 459 L 1103 545 L 981 545 Z M 981 459"/></clipPath></defs>
+    <g class="logo-diamond" fill="none" stroke-width="0.494" stroke-miterlimit="10">
+    <path clip-path="url(#mm-logo-clip)" transform="matrix(1 0 0 -1 988.3016 485.1336)" d="M 0 0 C 0.16 -0.2 0.21 -0.32 0.32 -0.39 C 3.85 -3.74 7.35 -7.08 10.87 -10.42 C 14.32 -13.64 17.76 -16.86 21.17 -20.11 C 23.63 -22.42 26.04 -24.71 28.5 -27.05 C 30.5 -28.93 32.54 -30.84 34.51 -32.74 C 36.29 -34.39 38.03 -36.06 39.76 -37.75 C 41.92 -39.77 44.12 -41.82 46.31 -43.88 C 49.12 -46.49 51.9 -49.14 54.66 -51.77 C 55 -52.08 55.24 -52.15 55.63 -51.79 C 57.94 -49.54 60.35 -47.28 62.71 -45.06 C 64.68 -43.23 66.65 -41.36 68.61 -39.47 C 70.71 -37.48 72.76 -35.48 74.83 -33.49 C 76.88 -31.58 78.94 -29.7 80.95 -27.77 C 84.14 -24.75 87.3 -21.71 90.5 -18.69 C 92.82 -16.5 95.16 -14.33 97.49 -12.11 C 100.92 -8.87 104.38 -5.57 107.85 -2.3 C 108.59 -1.57 109.4 -0.84 110.21 -0.04 C 109.97 0.16 109.78 0.34 109.57 0.5 C 106.35 3.01 103.08 5.52 99.81 8 C 97.34 9.9 94.78 11.78 92.29 13.7 C 89.48 15.81 86.7 17.99 83.93 20.12 C 83.71 20.29 83.4 20.4 83.13 20.4 C 80.55 20.41 77.93 20.41 75.34 20.41 C 70 20.41 64.65 20.37 59.32 20.37 C 57.05 20.36 54.85 20.41 52.63 20.41 L 39.53 20.41 C 35.66 20.41 31.77 20.41 27.91 20.4 C 27.39 20.4 26.73 20.37 26.37 20.06 C 22.36 17.09 18.39 14.04 14.42 11.02 C 10.48 8.02 6.58 5.02 2.62 2.01 C 1.75 1.36 0.91 0.7 0 0 Z M 0 0"/>
+    <path clip-path="url(#mm-logo-clip)" transform="matrix(1 0 0 -1 1058.7642 467.5811)" d="M 0 0 C -3.09 0 -6.21 0.04 -9.34 -0.02 C -9.76 -0.02 -10.19 -0.16 -10.61 -0.25 C -10.32 -0.62 -10.12 -1 -9.76 -1.32 C -7.63 -3.35 -5.44 -5.34 -3.31 -7.35 C -0.81 -9.64 1.69 -11.97 4.17 -14.27 C 4.64 -14.68 4.84 -14.63 5.09 -14.02 C 6.88 -9.69 8.7 -5.36 10.49 -1.05 C 10.84 -0.15 10.7 0 9.77 0 C 6.49 0.04 3.27 0 0 0 Z M -18.76 -0.12 C -19.14 -0.06 -19.39 -0.02 -19.65 -0.02 C -21.64 0 -23.66 0.04 -25.68 0.04 C -30.35 0.04 -35.05 0.04 -39.77 0 C -40.57 0 -40.67 -0.15 -40.36 -0.92 C -39.92 -2.09 -39.45 -3.22 -38.99 -4.36 C -37.63 -7.64 -36.24 -10.9 -34.92 -14.16 C -34.66 -14.79 -34.39 -14.86 -33.87 -14.42 C -33.07 -13.72 -32.27 -13 -31.47 -12.23 C -29.09 -10.05 -26.73 -7.83 -24.38 -5.59 C -22.66 -4.02 -20.98 -2.43 -19.25 -0.79 C -19.07 -0.63 -18.96 -0.45 -18.76 -0.12 Z M 33.06 -16.1 C 33.06 -16 33.11 -15.92 33.12 -15.87 C 32.81 -15.61 32.51 -15.3 32.17 -15.01 C 29.7 -13.18 27.26 -11.3 24.83 -9.41 C 21.29 -6.72 17.77 -4.04 14.26 -1.36 C 13.66 -0.92 13.52 -1 13.24 -1.7 C 12.57 -3.2 11.97 -4.74 11.35 -6.26 C 10.04 -9.33 8.81 -12.43 7.52 -15.52 C 7.34 -15.95 7.47 -16.19 7.94 -16.23 C 8.08 -16.24 8.21 -16.24 8.3 -16.24 C 13.52 -16.27 18.72 -16.29 23.92 -16.29 C 26.77 -16.29 29.58 -16.24 32.42 -16.19 C 32.63 -16.19 32.87 -16.11 33.06 -16.1 Z M -39.2 -16.27 L -39.2 -16.31 C -38.75 -16.29 -38.32 -16.27 -37.9 -16.24 C -37.43 -16.19 -37.28 -15.97 -37.45 -15.53 C -37.69 -14.9 -37.94 -14.27 -38.19 -13.63 C -38.99 -11.68 -39.77 -9.77 -40.53 -7.83 C -41.37 -5.83 -42.18 -3.82 -43.03 -1.82 C -43.43 -0.79 -43.48 -0.82 -44.39 -1.41 C -44.58 -1.53 -44.78 -1.7 -44.94 -1.81 C -48.26 -4.33 -51.64 -6.88 -54.93 -9.41 C -57.54 -11.43 -60.15 -13.48 -62.77 -15.49 C -62.95 -15.63 -63.06 -15.87 -63.16 -16.1 C -62.95 -16.11 -62.77 -16.24 -62.58 -16.24 C -60.49 -16.24 -58.42 -16.24 -56.29 -16.24 C -52.69 -16.27 -49.06 -16.27 -45.44 -16.27 Z M 1.59 -16.1 C 1.59 -16 1.64 -15.92 1.64 -15.87 C 1.04 -15.27 0.46 -14.68 -0.17 -14.11 C -2.53 -11.88 -4.96 -9.64 -7.33 -7.38 C -9.64 -5.25 -11.91 -3.14 -14.19 -1.04 C -14.54 -0.66 -14.89 -0.58 -15.32 -1 C -18.14 -3.65 -21.01 -6.29 -23.89 -8.93 C -26.14 -11.04 -28.39 -13.18 -30.63 -15.3 C -30.85 -15.52 -31.01 -15.77 -31.17 -15.98 C -31.17 -16.04 -31.17 -16.11 -31.12 -16.19 C -30.41 -16.23 -29.74 -16.24 -29.05 -16.24 C -25.15 -16.27 -21.24 -16.29 -17.31 -16.31 L -8.4 -16.31 C -5.32 -16.29 -2.23 -16.27 0.85 -16.23 C 1.12 -16.23 1.33 -16.14 1.59 -16.1 Z M -11.46 -62.08 C -11.4 -62.1 -11.37 -62.11 -11.33 -62.16 C -11.11 -62 -10.84 -61.91 -10.67 -61.71 C -8.4 -59.63 -6.19 -57.56 -3.93 -55.44 C -0.95 -52.63 2.02 -49.77 5 -46.95 C 7.63 -44.45 10.26 -41.97 12.9 -39.48 C 17.77 -34.86 22.66 -30.25 27.5 -25.63 C 29.38 -23.85 31.26 -22.06 33.12 -20.26 C 33.41 -20 33.68 -19.7 34.03 -19.27 C 33.68 -19.21 33.43 -19.14 33.26 -19.14 C 32.15 -19.13 31.01 -19.1 29.9 -19.1 C 24.2 -19.06 18.48 -19.06 12.76 -19.06 C 10.78 -19.06 8.8 -19.1 6.78 -19.1 C 6.39 -19.1 6 -19.13 5.82 -19.61 C 5.06 -21.49 4.26 -23.35 3.51 -25.23 C 2.29 -28.26 1.04 -31.3 -0.17 -34.29 C -1.44 -37.4 -2.71 -40.43 -3.98 -43.51 C -4.78 -45.5 -5.6 -47.5 -6.42 -49.51 C -8 -53.4 -9.56 -57.25 -11.16 -61.12 C -11.31 -61.43 -11.37 -61.76 -11.46 -62.08 Z M -64.04 -19.29 C -63.79 -20.09 -19.18 -62.18 -18.34 -62.33 C -18.4 -62.1 -18.44 -61.87 -18.48 -61.69 C -19.18 -59.95 -19.85 -58.2 -20.55 -56.5 C -21.75 -53.59 -22.93 -50.73 -24.14 -47.86 C -25.35 -44.84 -26.58 -41.84 -27.83 -38.8 C -28.87 -36.24 -29.92 -33.7 -30.97 -31.15 C -31.57 -29.66 -32.14 -28.2 -32.78 -26.75 C -33.66 -24.6 -34.57 -22.43 -35.42 -20.26 C -35.82 -19.27 -35.94 -19.13 -37.01 -19.13 L -42.83 -19.13 C -46.51 -19.13 -50.16 -19.1 -53.81 -19.1 C -57.05 -19.1 -60.26 -19.14 -63.44 -19.17 C -63.64 -19.19 -63.87 -19.27 -64.04 -19.29 Z M -28.91 -19.14 L -28.91 -19.17 L -31.91 -19.17 C -32.78 -19.17 -32.85 -19.27 -32.51 -20.11 C -32.49 -20.18 -32.46 -20.26 -32.42 -20.34 C -31.25 -23.2 -30.06 -26.06 -28.87 -28.94 C -27.3 -32.77 -25.75 -36.64 -24.17 -40.47 C -22.45 -44.66 -20.71 -48.91 -18.95 -53.11 C -17.81 -55.9 -16.65 -58.7 -15.46 -61.5 C -15.35 -61.78 -15.1 -61.97 -14.92 -62.18 C -14.79 -62 -14.54 -61.82 -14.43 -61.59 C -13.41 -59.07 -12.37 -56.52 -11.31 -54.01 C -10.07 -50.99 -8.85 -48 -7.63 -45.02 C -6.26 -41.67 -4.85 -38.33 -3.44 -35 C -2.56 -32.75 -1.66 -30.43 -0.72 -28.18 C 0.42 -25.38 1.59 -22.6 2.7 -19.81 C 2.9 -19.38 2.74 -19.13 2.29 -19.13 C 1.79 -19.13 1.26 -19.1 0.76 -19.1 C -4.08 -19.13 -8.92 -19.13 -13.76 -19.14 Z M -70.16 -17.55 C -69.26 -16.85 -68.42 -16.19 -67.55 -15.54 C -63.59 -12.53 -59.68 -9.53 -55.74 -6.53 C -51.78 -3.52 -47.8 -0.47 -43.79 2.51 C -43.43 2.82 -42.78 2.85 -42.25 2.85 C -38.39 2.86 -34.5 2.86 -30.63 2.86 L -17.53 2.86 C -15.32 2.86 -13.11 2.8 -10.84 2.82 C -5.52 2.82 -0.17 2.86 5.17 2.86 C 7.76 2.86 10.38 2.86 12.96 2.85 C 13.24 2.85 13.54 2.74 13.77 2.57 C 16.54 0.44 19.31 -1.74 22.13 -3.86 C 24.62 -5.77 27.17 -7.65 29.64 -9.56 C 32.91 -12.04 36.18 -14.54 39.41 -17.05 C 39.62 -17.21 39.8 -17.39 40.04 -17.59 C 39.23 -18.4 38.43 -19.13 37.69 -19.85 C 34.21 -23.13 30.76 -26.42 27.33 -29.66 C 24.99 -31.88 22.66 -34.05 20.34 -36.24 C 17.14 -39.27 13.97 -42.3 10.78 -45.32 C 8.78 -47.25 6.71 -49.13 4.67 -51.04 C 2.6 -53.04 0.54 -55.03 -1.55 -57.02 C -3.52 -58.91 -5.48 -60.77 -7.45 -62.61 C -9.82 -64.83 -12.22 -67.09 -14.54 -69.34 C -14.92 -69.7 -15.17 -69.63 -15.5 -69.32 C -18.26 -66.69 -21.04 -64.04 -23.86 -61.43 C -26.05 -59.37 -28.24 -57.32 -30.4 -55.3 C -32.14 -53.61 -33.87 -51.93 -35.65 -50.29 C -37.63 -48.4 -39.66 -46.48 -41.67 -44.6 C -44.12 -42.26 -46.53 -39.97 -48.99 -37.66 C -52.41 -34.42 -55.85 -31.19 -59.29 -27.98 C -62.81 -24.63 -66.32 -21.29 -69.84 -17.93 C -69.96 -17.87 -70 -17.75 -70.16 -17.55 Z M -70.16 -17.55"/>
+    <path transform="matrix(1 0 0 -1 1029.5568 486.7232)" d="M 0 0 L 15.15 0 C 19.99 0.02 24.83 0.02 29.67 0.04 C 30.17 0.04 30.7 0.02 31.2 0.02 C 31.65 0.02 31.81 -0.23 31.61 -0.66 C 30.49 -3.46 29.33 -6.23 28.19 -9.03 C 27.26 -11.29 26.35 -13.61 25.47 -15.85 C 24.06 -19.19 22.65 -22.53 21.28 -25.88 C 20.06 -28.86 18.84 -31.84 17.6 -34.87 C 16.54 -37.38 15.5 -39.93 14.48 -42.45 C 14.37 -42.68 14.13 -42.86 13.99 -43.04 C 13.81 -42.82 13.56 -42.64 13.45 -42.36 C 12.26 -39.56 11.1 -36.76 9.96 -33.97 C 8.2 -29.77 6.46 -25.52 4.74 -21.32 C 3.16 -17.49 1.61 -13.62 0.04 -9.8 C -1.15 -6.92 -2.34 -4.06 -3.51 -1.2 C -3.55 -1.12 -3.58 -1.03 -3.6 -0.97 C -3.94 -0.13 -3.87 -0.03 -3 -0.03 L 0 -0.03 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 994.4253 486.8709)" d="M 0 0 C 0.18 0.02 0.4 0.1 0.61 0.12 C 3.78 0.15 6.99 0.19 10.23 0.19 C 13.88 0.19 17.54 0.16 21.21 0.16 L 27.04 0.16 C 28.11 0.16 28.22 0.02 28.62 -0.97 C 29.47 -3.14 30.38 -5.31 31.27 -7.46 C 31.9 -8.91 32.47 -10.38 33.07 -11.86 C 34.12 -14.41 35.16 -16.95 36.22 -19.51 C 37.47 -22.55 38.7 -25.55 39.9 -28.57 C 41.11 -31.44 42.29 -34.3 43.49 -37.21 C 44.19 -38.91 44.86 -40.66 45.57 -42.4 C 45.6 -42.58 45.63 -42.81 45.7 -43.04 C 44.86 -42.89 0.25 -0.8 0 0 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1047.0116 529.6558)" d="M 0 0 C 0.08 0.32 0.14 0.64 0.29 0.96 C 1.89 4.82 3.45 8.68 5.04 12.56 C 5.86 14.57 6.67 16.57 7.48 18.56 C 8.75 21.64 10.02 24.68 11.28 27.78 C 12.5 30.77 13.74 33.81 14.97 36.85 C 15.71 38.72 16.52 40.58 17.28 42.46 C 17.45 42.95 17.84 42.97 18.23 42.97 C 20.25 42.97 22.24 43.01 24.22 43.01 C 29.94 43.01 35.66 43.01 41.36 42.97 C 42.47 42.97 43.61 42.95 44.71 42.93 C 44.89 42.93 45.14 42.87 45.49 42.8 C 45.14 42.37 44.86 42.07 44.58 41.82 C 42.71 40.02 40.83 38.23 38.95 36.44 C 35.93 33.57 32.91 30.72 29.91 27.84 C 28.07 26.11 26.23 24.36 24.36 22.59 C 21.71 20.11 19.08 17.62 16.46 15.12 C 13.47 12.3 10.51 9.44 7.52 6.63 C 5.27 4.51 3.06 2.44 0.78 0.36 C 0.61 0.17 0.35 0.08 0.13 -0.09 C 0.08 -0.04 0.05 -0.03 0 0 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1060.0518 483.6816)" d="M 0 0 C -0.25 -0.04 -0.46 -0.13 -0.74 -0.13 C -3.82 -0.17 -6.91 -0.19 -9.98 -0.21 L -18.9 -0.21 C -22.82 -0.19 -26.74 -0.17 -30.63 -0.14 C -31.33 -0.13 -32 -0.13 -32.7 -0.09 C -32.75 -0.01 -32.75 0.06 -32.75 0.12 C -32.6 0.33 -32.43 0.58 -32.22 0.8 C -29.97 2.92 -27.72 5.06 -25.47 7.17 C -22.59 9.81 -19.72 12.46 -16.9 15.1 C -16.48 15.52 -16.12 15.44 -15.77 15.06 C -13.5 12.96 -11.22 10.85 -8.91 8.72 C -6.55 6.46 -4.11 4.22 -1.75 1.99 C -1.13 1.42 -0.54 0.83 0.06 0.23 C 0.06 0.18 0 0.1 0 0 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1019.269 483.8551)" d="M 0 0 L -6.25 0 C -9.87 0 -13.5 0.01 -17.09 0.03 C -19.22 0.03 -21.3 0.03 -23.37 0.04 C -23.57 0.04 -23.75 0.16 -23.96 0.18 C -23.86 0.41 -23.75 0.64 -23.57 0.78 C -20.96 2.8 -18.34 4.84 -15.73 6.86 C -12.43 9.39 -9.06 11.95 -5.74 14.46 C -5.58 14.58 -5.38 14.74 -5.2 14.87 C -4.28 15.45 -4.24 15.48 -3.84 14.46 C -2.98 12.45 -2.18 10.45 -1.34 8.44 C -0.57 6.5 0.21 4.6 1.01 2.65 C 1.26 2.01 1.5 1.37 1.75 0.75 C 1.92 0.3 1.77 0.08 1.3 0.04 C 0.88 0.01 0.45 -0.02 0 -0.04 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1091.5267 483.6816)" d="M 0 0 C -0.19 -0.01 -0.43 -0.09 -0.64 -0.09 C -3.48 -0.13 -6.29 -0.19 -9.14 -0.19 C -14.34 -0.19 -19.53 -0.17 -24.75 -0.13 C -24.85 -0.13 -24.99 -0.13 -25.12 -0.13 C -25.58 -0.09 -25.72 0.14 -25.54 0.58 C -24.25 3.67 -23.02 6.77 -21.71 9.84 C -21.09 11.36 -20.49 12.9 -19.82 14.4 C -19.53 15.1 -19.4 15.18 -18.8 14.74 C -15.28 12.06 -11.77 9.38 -8.23 6.69 C -5.81 4.8 -3.35 2.92 -0.89 1.09 C -0.55 0.8 -0.25 0.49 0.06 0.23 C 0.05 0.18 0 0.1 0 0 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1039.7081 467.6992)" d="M 0 0 C -0.2 -0.33 -0.31 -0.51 -0.49 -0.67 C -2.22 -2.31 -3.9 -3.9 -5.62 -5.48 C -7.98 -7.71 -10.33 -9.93 -12.72 -12.11 C -13.51 -12.88 -14.31 -13.61 -15.11 -14.3 C -15.63 -14.74 -15.9 -14.67 -16.16 -14.04 C -17.49 -10.79 -18.87 -7.52 -20.23 -4.25 C -20.69 -3.1 -21.16 -1.97 -21.6 -0.8 C -21.91 -0.03 -21.81 0.12 -21.01 0.12 C -16.3 0.16 -11.59 0.16 -6.92 0.16 C -4.9 0.16 -2.87 0.12 -0.89 0.09 C -0.63 0.09 -0.38 0.06 0 0 Z M 0 0"/>
+    <path transform="matrix(1 0 0 -1 1058.4661 467.5811)" d="M 0 0 C 3.27 0 6.49 0.04 9.77 0 C 10.71 0 10.84 -0.15 10.49 -1.05 C 8.71 -5.36 6.89 -9.69 5.09 -14.02 C 4.85 -14.63 4.64 -14.68 4.17 -14.27 C 1.69 -11.97 -0.81 -9.64 -3.31 -7.35 C -5.44 -5.34 -7.63 -3.35 -9.76 -1.32 C -10.12 -1 -10.32 -0.62 -10.61 -0.25 C -10.19 -0.16 -9.76 -0.02 -9.34 -0.02 C -6.22 0.04 -3.09 0 0 0 Z M 0 0"/>
+    </g>
+    <g class="logo-mr">
+    <path transform="translate(832.7793 537.167)" d="M 72.61 0 L 51.56 0 L 59.88 -44.06 L 59.56 -44.06 L 42.62 0 L 28.86 0 L 27.42 -44.06 L 27.02 -44.06 L 20.55 0 L 1.23 0 L 13.86 -75.16 L 39.33 -75.16 L 41.48 -34.61 L 41.91 -34.61 L 57 -75.16 L 85.25 -75.16 Z M 72.61 0"/>
+    <path transform="translate(908.57249 537.167)" d="M 60.8 -54.03 C 60.8 -48.58 59.75 -43.98 57.66 -40.23 C 55.57 -36.48 52.61 -33.76 48.78 -32.06 L 55.67 0 L 32.97 0 L 29.06 -27.39 L 26.39 -27.39 L 21.77 0 L 1.23 0 L 13.86 -75.16 L 39.03 -75.16 C 46.08 -75.16 51.47 -73.38 55.2 -69.84 C 58.93 -66.31 60.8 -61.04 60.8 -54.03 Z M 39.12 -51.17 C 39.12 -53.36 38.55 -54.8 37.42 -55.52 C 36.3 -56.22 35.22 -56.58 34.2 -56.58 L 31.33 -56.58 L 28.97 -42.67 L 31.22 -42.67 C 33.27 -42.67 35.1 -43.3 36.7 -44.58 C 38.32 -45.86 39.12 -48.05 39.12 -51.17 Z M 39.12 -51.17"/>
+    </g>
+    <g class="logo-minty">
+    <path d="M 892.12 617.61 L 871.11 617.61 L 879.41 573.65 L 879.11 573.65 L 862.2 617.61 L 848.47 617.61 L 847.03 573.65 L 846.62 573.65 L 840.16 617.61 L 820.9 617.61 L 833.5 542.62 L 858.92 542.62 L 861.07 583.08 L 861.48 583.08 L 876.55 542.62 L 904.73 542.62 Z M 892.12 617.61"/>
+    <path d="M 918.54 617.61 L 896.81 617.61 L 909.41 542.62 L 931.14 542.62 Z M 918.54 617.61"/>
+    <path d="M 976.41 617.61 L 954.07 617.61 L 948.02 580.85 L 947.71 580.85 L 942.28 617.61 L 923.22 617.61 L 935.82 542.62 L 958.68 542.62 L 964.41 580.43 L 964.83 580.43 L 970.57 542.62 L 989.01 542.62 Z M 976.41 617.61"/>
+    <path d="M 1037.06 561.47 L 1024.14 561.47 L 1014.72 617.61 L 993.5 617.61 L 1003.04 561.47 L 990.12 561.47 L 993.3 542.62 L 1041.08 542.62 Z M 1037.06 561.47"/>
+    <path d="M 1064.75 617.61 L 1043.02 617.61 L 1047.22 592.93 L 1041.36 561.3 L 1045.45 542.62 L 1060.55 542.62 L 1061.88 570.26 L 1062.19 570.26 L 1072.84 542.62 L 1096 542.62 L 1068.95 592.93 Z M 1064.75 617.61"/>
+    </g>
+    </svg>
     <div class="header-row">
       <span class="step-indicator" id="step-indicator">Loading…</span>
     </div>
@@ -755,35 +847,89 @@
       </div>
     </section>
 
-    <!-- Screen 1 -->
+    <!-- Screen 1: welcome + collecting story (Steve 10/16 moved the old screen 3 here) -->
     <section class="screen" id="screen-1" data-screen="1" hidden>
-      <h1 class="screen-title">Let's get started!</h1>
-      <p class="screen-body">Thanks for your order<span id="greeting-name"></span>. This form takes about 5 minutes and replaces the spreadsheet. It tells us which cards are coming and how you'd like them returned.</p>
+      <h1 class="screen-title">Let's get Minty!</h1>
+      <p class="screen-body">Thank you for your order<span id="greeting-name"></span>. This form takes under 5 minutes and replaces the Google Doc.</p>
       <p class="order-card" id="order-card-line"></p>
 
       <div class="need-grid">
         <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="14" height="10" rx="2"></rect><rect x="7" y="9" width="14" height="10" rx="2" fill="none"></rect></svg>
-          <span>Your cards (or a list of them)</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h11v9H3z"></path><path d="M14 10h4l3 3v3h-7"></path><circle cx="7" cy="17.5" r="1.8"></circle><circle cx="17" cy="17.5" r="1.8"></circle></svg>
+          <span>Shipping confirmation</span>
         </div>
         <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"></rect><circle cx="8" cy="12" r="2"></circle><path d="M13 10h6M13 14h4"></path></svg>
-          <span>Your PSA or Fanatics Vault # if you use one</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
+          <span>Collector insight</span>
         </div>
         <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 3"></path></svg>
-          <span>About 5 minutes</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="14" height="10" rx="2"></rect><rect x="7" y="9" width="14" height="10" rx="2" fill="none"></rect></svg>
+          <span>List your cards</span>
+        </div>
+        <div class="need-item">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
+          <span>Consent</span>
         </div>
       </div>
 
-      <div class="screen-footer start-screen-cta">
-        <button type="button" class="btn btn-primary btn-block" id="btn-start">Let's get started</button>
+      <div class="story-block" id="collector-story">
+        <h2 class="story-title">Tell us your collecting story</h2>
+        <p class="screen-body">This helps us tailor the evaluation. Select all that apply.</p>
+
+        <h2 class="section-heading">What best describes your experience?</h2>
+        <div class="tile-grid" role="radiogroup" aria-label="Experience level">
+          <div class="tile">
+            <input type="radio" name="experience" id="exp-new">
+            <label for="exp-new"><span class="tile-text"><span class="tile-main">Freshy</span><span class="tile-sub">New to the Hobby 0-3 months</span></span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
+          </div>
+          <div class="tile">
+            <input type="radio" name="experience" id="exp-return">
+            <label for="exp-return"><span>Getting back into the hobby</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
+          </div>
+          <div class="tile">
+            <input type="radio" name="experience" id="exp-seasoned">
+            <label for="exp-seasoned"><span>Seasoned collector</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
+          </div>
+        </div>
+
+        <h2 class="section-heading">How did you acquire this collection?</h2>
+        <div class="tile-grid">
+          <div class="tile"><input type="checkbox" id="acq-passed"><label for="acq-passed"><span>Passed down</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-ebay"><label for="acq-ebay"><span>eBay</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-pulled"><label for="acq-pulled"><span>Pulled personally</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-childhood"><label for="acq-childhood"><span>Childhood collection</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-whatnot"><label for="acq-whatnot"><span>Whatnot</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-singles"><label for="acq-singles"><span>Singles break</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-graded"><label for="acq-graded"><span>Previously graded</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-cardshow"><label for="acq-cardshow"><span>Card show</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="acq-other"><label for="acq-other"><span>Other marketplace</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+        </div>
+
+        <h2 class="section-heading">What are your goals for this submission?</h2>
+        <div class="tile-grid">
+          <div class="tile"><input type="checkbox" id="goal-worth"><label for="goal-worth"><span>Identify if a card is worth grading</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="goal-crackout"><label for="goal-crackout"><span>Review for slab crack out or cross over</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="goal-hold"><label for="goal-hold"><span>Hold / investment</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="goal-preservation"><label for="goal-preservation"><span>Preservation</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="goal-flip"><label for="goal-flip"><span>Quick flip</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+          <div class="tile"><input type="checkbox" id="goal-resub"><label for="goal-resub"><span>Resubmission</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="notes">Anything else we should know?</label>
+          <textarea id="notes" rows="2" maxlength="2000"></textarea>
+          <span class="field-error" id="err-notes" hidden>Please check this field.</span>
+        </div>
+      </div>
+
+      <div class="screen-footer">
+        <button type="button" class="btn btn-primary" id="btn-continue-1">Continue</button>
       </div>
     </section>
 
     <!-- Screen 2 -->
     <section class="screen" id="screen-2" data-screen="2" hidden>
-      <h1 class="screen-title">Does everything look correct?</h1>
+      <h1 class="screen-title">Your return shipping address look correct?</h1>
       <p class="screen-body">We filled this in from your order. Anything can be changed.</p>
 
       <div class="field-grid two-col">
@@ -806,7 +952,7 @@
           <span class="field-error" id="err-phone" hidden>Please enter a phone number.</span>
         </div>
         <div class="field">
-          <label class="field-label" for="instagram">Instagram handle (optional)</label>
+          <label class="field-label" for="instagram">Instagram handle</label>
           <input type="text" id="instagram" placeholder="@" maxlength="200">
           <span class="field-error" id="err-instagram" hidden>Please check this field.</span>
         </div>
@@ -846,19 +992,63 @@
         </div>
       </div>
 
-      <h2 class="section-heading">After grading, how should we handle your cards?</h2>
+      <div class="screen-footer">
+        <button type="button" class="btn btn-secondary" id="btn-back-2">Back</button>
+        <button type="button" class="btn btn-primary" id="btn-continue-2">Continue</button>
+      </div>
+    </section>
+
+    <!-- Screen 3: cards -->
+    <section class="screen" id="screen-3" data-screen="3" hidden>
+      <h1 class="screen-title">List your cards</h1>
+      <p class="screen-body" id="cards-intro">Loading your order&hellip;</p>
+      <span class="pill" id="row-count-pill">0 of 0 listed</span>
+
+      <div class="row-head" id="row-head" aria-hidden="true">
+        <div class="row-head-grid">
+          <span class="row-head-spacer"></span>
+          <span class="head-desc">Card description<span class="head-guide">Year &middot; Set/Subset &middot; Card # &middot; Player/Character &middot; Color/Variation &middot; Serial #</span></span>
+          <div class="head-cost">
+            <span class="head-cost-title">Cost basis</span>
+            <span>Your cost ($)</span>
+            <span>Raw comp ($)</span>
+          </div>
+          <span class="row-head-spacer"></span>
+        </div>
+      </div>
+      <div class="cards-table">
+        <div id="rows-container"></div>
+      </div>
+
+      <div class="add-row-wrap">
+        <button type="button" class="btn btn-secondary" id="btn-add-row">+ Add another card</button>
+        <p class="add-row-note">Up to 200 cards per form. More than 200, or need to change something after you submit? Email <a href="mailto:MrMinty@MrMinty.com">MrMinty@MrMinty.com</a>.</p>
+      </div>
+
+      <div class="screen-footer">
+        <button type="button" class="btn btn-secondary" id="btn-back-3">Back</button>
+        <button type="button" class="btn btn-primary" id="btn-continue-3">Continue</button>
+      </div>
+    </section>
+
+    <!-- Screen 4: after grading (Steve 10/16: its own screen, after the cards) -->
+    <section class="screen" id="screen-4" data-screen="4" hidden>
+      <h1 class="screen-title">After grading, how should we handle your cards?</h1>
+
       <div class="option-list" role="radiogroup" aria-label="Return method">
         <div class="option-card">
           <input type="radio" name="return-method" id="return-ship" value="ship" checked>
           <label for="return-ship">
             <span class="option-title">Return ship them to me</span>
             <span class="option-helper">Shipping both ways is on you; we'll invoice it after grading.</span>
+            <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
         </div>
         <div class="option-card">
           <input type="radio" name="return-method" id="return-psa" value="psa-vault">
           <label for="return-psa">
             <span class="option-title">Send them to my PSA Vault</span>
+            <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
           <div class="option-reveal field" id="reveal-psa" hidden>
             <label class="field-label" for="psa-vault">PSA Vault #</label>
@@ -870,6 +1060,7 @@
           <input type="radio" name="return-method" id="return-fanatics" value="fanatics-vault">
           <label for="return-fanatics">
             <span class="option-title">Send them to my Fanatics Collect Vault</span>
+            <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
           <div class="option-reveal field" id="reveal-fanatics" hidden>
             <label class="field-label" for="fanatics-vault">Fanatics Vault #</label>
@@ -885,96 +1076,6 @@
       </div>
 
       <div class="screen-footer">
-        <button type="button" class="btn btn-secondary" id="btn-back-2">Back</button>
-        <button type="button" class="btn btn-primary" id="btn-continue-2">Continue</button>
-      </div>
-    </section>
-
-    <!-- Screen 3 -->
-    <section class="screen" id="screen-3" data-screen="3" hidden>
-      <h1 class="screen-title">Tell us about your collecting</h1>
-      <p class="screen-body">This helps us tailor the evaluation. Select all that apply.</p>
-
-      <h2 class="section-heading">What best describes your experience?</h2>
-      <div class="tile-grid" role="radiogroup" aria-label="Experience level">
-        <div class="tile">
-          <input type="radio" name="experience" id="exp-new">
-          <label for="exp-new"><span>New to collecting (0&ndash;12 months)</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
-        </div>
-        <div class="tile">
-          <input type="radio" name="experience" id="exp-return">
-          <label for="exp-return"><span>Getting back into the hobby</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
-        </div>
-        <div class="tile">
-          <input type="radio" name="experience" id="exp-seasoned">
-          <label for="exp-seasoned"><span>Seasoned collector</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label>
-        </div>
-      </div>
-
-      <h2 class="section-heading">How did you acquire this collection?</h2>
-      <div class="tile-grid">
-        <div class="tile"><input type="checkbox" id="acq-passed"><label for="acq-passed"><span>Passed down</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-ebay"><label for="acq-ebay"><span>eBay</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-pulled"><label for="acq-pulled"><span>Pulled personally</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-childhood"><label for="acq-childhood"><span>Childhood collection</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-whatnot"><label for="acq-whatnot"><span>Whatnot</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-singles"><label for="acq-singles"><span>Singles break</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-graded"><label for="acq-graded"><span>Previously graded</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-cardshow"><label for="acq-cardshow"><span>Card show</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="acq-other"><label for="acq-other"><span>Other marketplace</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-      </div>
-
-      <h2 class="section-heading">What are your goals for this submission?</h2>
-      <div class="tile-grid">
-        <div class="tile"><input type="checkbox" id="goal-worth"><label for="goal-worth"><span>Identify if a card is worth grading</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="goal-crackout"><label for="goal-crackout"><span>Review for slab crack out or cross over</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="goal-hold"><label for="goal-hold"><span>Hold / investment</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="goal-preservation"><label for="goal-preservation"><span>Preservation</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="goal-flip"><label for="goal-flip"><span>Quick flip</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-        <div class="tile"><input type="checkbox" id="goal-resub"><label for="goal-resub"><span>Resubmission</span><svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg></label></div>
-      </div>
-
-      <div class="field">
-        <label class="field-label" for="notes">Anything else we should know? (optional)</label>
-        <textarea id="notes" rows="2" maxlength="2000"></textarea>
-        <span class="field-error" id="err-notes" hidden>Please check this field.</span>
-      </div>
-
-      <div class="screen-footer">
-        <button type="button" class="btn btn-secondary" id="btn-back-3">Back</button>
-        <button type="button" class="btn btn-primary" id="btn-continue-3">Continue</button>
-      </div>
-    </section>
-
-    <!-- Screen 4 -->
-    <section class="screen" id="screen-4" data-screen="4" hidden>
-      <h1 class="screen-title">List your cards</h1>
-      <p class="screen-body" id="screen4-intro">Loading your order&hellip;</p>
-      <span class="pill" id="row-count-pill">0 of 0 listed</span>
-
-      <div class="row-head" id="row-head" aria-hidden="true">
-        <div class="row-head-grid">
-          <span class="row-head-spacer"></span>
-          <span class="head-desc">Card description<span class="head-guide">Year &middot; Set/Subset &middot; Card # &middot; Player/Character &middot; Color/Variation &middot; Serial #</span></span>
-          <div class="head-cost">
-            <span class="head-cost-title">Cost basis</span>
-            <span>Your cost ($)</span>
-            <span>Raw comp ($)</span>
-            <span>Graded comp ($)</span>
-          </div>
-          <span class="row-head-spacer"></span>
-        </div>
-      </div>
-      <div class="cards-table">
-        <div id="rows-container"></div>
-      </div>
-
-      <div class="add-row-wrap">
-        <button type="button" class="btn btn-secondary" id="btn-add-row">+ Add another card</button>
-        <p class="add-row-note">Up to 200 cards per form. More than 200, or need to change something after you submit? Email <a href="mailto:MrMinty@MrMinty.com">MrMinty@MrMinty.com</a>.</p>
-      </div>
-
-      <div class="screen-footer">
         <button type="button" class="btn btn-secondary" id="btn-back-4">Back</button>
         <button type="button" class="btn btn-primary" id="btn-continue-4">Continue</button>
       </div>
@@ -983,8 +1084,6 @@
     <!-- Screen 5 -->
     <section class="screen" id="screen-5" data-screen="5" hidden>
       <h1 class="screen-title">Consent and signature</h1>
-      <p class="screen-body">One signature covers every card on this form.</p>
-
       <div class="disclaimer-box" id="disclaimer-box" tabindex="0">
         <h3>Disclaimer</h3>
         <p id="disclaimer-text">Disclaimer: Customer shall fully defend, indemnify, and hold harmless Steve Morse doing business under the name Mr. Minty Supply LLC from any and all claims, lawsuits, demands, causes of action, liability, loss, damage, of any kind whatsoever ( including without limitation all claims for monetary loss, property damage, equitable relief, whether brought by an individual or other entity, or imposed by a court of law or by administrative action of any federal, state, or local governmental body or agency, arising out of, in any way whatsoever, any acts, omissions, negligence. This indemnification applies to and includes, without limitation, the payment of all penalties, fines attorneys' fees, and related costs or expenses, for all legal fees, expenses, and costs incurred by it. Social media posting of negative claims, slander and false representation is strictly prohibited. If it is deemed that PSA caused damage to your card during the grading process, Steve Morse will help facilitate a damage claim on your behalf with PSA, however such initiation is not an omission of guilt or any wrongdoing. Simply a service offered to the customer as a courtesy. If you pay to have your card cracked out of its current slab, you understand that there is risk of damage to your card and Steve Morse and Mr. Minty Supply LLC will not be liable for such damage.</p>
@@ -1031,40 +1130,40 @@
           <span class="step-num">1</span>
           <div>
             <h3>Ship your cards</h3>
-            <div class="address-block">
-              Steve Morse<br>
-              5325 Alton Pkwy, Suite C-545<br>
-              Irvine, CA 92604
-            </div>
+            <!-- Filled from the server's answer after submitting (never written in this page). -->
+            <div class="address-block" id="ship-to-address"></div>
             <button type="button" class="copy-btn" id="btn-copy-address">Copy address</button>
-            <p class="sr-only" id="copy-address-source">Steve Morse, 5325 Alton Pkwy, Suite C-545, Irvine, CA 92604</p>
           </div>
         </div>
         <div class="step-item">
           <span class="step-num">2</span>
           <div>
-            <h3>We confirm arrival and book your 1:1 consultation</h3>
-            <p>We'll email you when the cards arrive to schedule it. Your timeline is confirmed there.</p>
+            <h3>Packing rules</h3>
+            <ul class="checklist">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Ship in a box.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Cards in a semi-rigid holder between two pieces of cardboard, then bubble wrap.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>No "Mr. Minty", "cards" or hobby-related names on the shipping label or packaging.</span></li>
+            </ul>
           </div>
         </div>
         <div class="step-item">
           <span class="step-num">3</span>
           <div>
-            <h3>Evaluation, grading, results</h3>
-            <p>We evaluate every card, submit it for grading, and send your results with return shipping details.</p>
+            <h3>Shipping instructions</h3>
+            <ul class="checklist">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Signature service required.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Overnight or 2nd day shipping for anything of significant value.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Avoid shipping on weekends.</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">4</span>
+          <div>
+            <h3>We will confirm within 24 hours of package delivery.</h3>
           </div>
         </div>
       </div>
-
-      <h2 class="section-heading">Packing rules</h2>
-      <ul class="checklist">
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Ship in a box.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Cards in a semi-rigid holder between two pieces of cardboard, then bubble wrap.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Signature service required.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Overnight or 2nd day shipping for anything of significant value.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>No "Mr. Minty", "cards" or hobby-related names on the shipping label or packaging.</span></li>
-        <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M4 12l6 6L20 6"></path></svg><span>Avoid shipping on weekends.</span></li>
-      </ul>
 
       <div class="done-footer">
         <p id="sent-to-line">A copy of this form was sent to <span id="sent-to-email"></span>.</p>
@@ -1124,12 +1223,12 @@
   // server turned out to hold the first submission (SPEC-v1.8-changes.md §3, Submit).
   var EDITS_NOT_INCLUDED_MESSAGE = 'Your first submission went through. Changes made after it were not included — email ' + CONTACT_EMAIL + ' with your order number to change anything.';
 
+  // Shown after "Step n of 6 · ". Step 1 shows "Step 1 of 6" alone (Steve 10/16: the title already says it).
   var SCREEN_NAMES = {
-    1: "Let's get started",
-    2: "Does everything look correct?",
-    3: "Tell us about your collecting",
-    4: "List your cards",
-    5: "Consent and signature",
+    2: "Shipping confirmation",
+    3: "List your cards",
+    4: "After grading",
+    5: "Consent",
     6: "You're all set"
   };
 
@@ -1417,7 +1516,7 @@
     if (!isNaN(n) && n >= 1 && n <= 6 && String(n) === key) {
       progressBar.hidden = false;
       stepIndicator.hidden = false;
-      stepIndicator.textContent = 'Step ' + n + ' of 6 · ' + SCREEN_NAMES[n];
+      stepIndicator.textContent = 'Step ' + n + ' of 6' + (SCREEN_NAMES[n] ? ' · ' + SCREEN_NAMES[n] : '');
       progressBar.setAttribute('aria-label', 'Step ' + n + ' of 6');
       progressSegs.forEach(function (seg, i) {
         var idx = i + 1;
@@ -1546,7 +1645,7 @@
     });
   });
 
-  // ---- Screen 4: card rows ----------------------------------------------
+  // ---- Screen 3: card rows ----------------------------------------------
   var rowsContainer = document.getElementById('rows-container');
   var addRowBtn = document.getElementById('btn-add-row');
   var pill = document.getElementById('row-count-pill');
@@ -1563,7 +1662,6 @@
     var description = opts.description || '';
     var cost = opts.cost || '';
     var rawComp = opts.rawComp || '';
-    var gradedComp = opts.gradedComp || '';
 
     var html = '';
     html += '<div class="row-card" id="row-' + id + '" data-row-id="' + id + '">';
@@ -1573,7 +1671,6 @@
     html += '    <span class="cost-basis-legend">Cost basis (optional)</span>';
     html += '    <div class="field"><label class="field-label" for="row-' + id + '-cost">Your cost ($)</label><input type="text" id="row-' + id + '-cost" value="' + escapeAttr(cost) + '" maxlength="200"><span class="field-error" id="row-' + id + '-cost-err" hidden></span></div>';
     html += '    <div class="field"><label class="field-label" for="row-' + id + '-rawcomp">Raw comp ($)</label><input type="text" id="row-' + id + '-rawcomp" value="' + escapeAttr(rawComp) + '" maxlength="200"><span class="field-error" id="row-' + id + '-rawcomp-err" hidden></span></div>';
-    html += '    <div class="field"><label class="field-label" for="row-' + id + '-gradedcomp">Graded comp ($)</label><input type="text" id="row-' + id + '-gradedcomp" value="' + escapeAttr(gradedComp) + '" maxlength="200"><span class="field-error" id="row-' + id + '-gradedcomp-err" hidden></span></div>';
     html += '  </div>';
     html += '  <button type="button" class="row-remove" id="row-' + id + '-remove" aria-label="Remove card">&times;</button>';
     html += '</div>';
@@ -1607,7 +1704,7 @@
     }
     var descInput = document.getElementById('row-' + id + '-desc');
     if (descInput) descInput.addEventListener('input', function () { clearRowErrorIfFilled(id); });
-    ['cost', 'rawcomp', 'gradedcomp'].forEach(function (suffix) {
+    ['cost', 'rawcomp'].forEach(function (suffix) {
       clearErrorOnInput('row-' + id + '-' + suffix, 'row-' + id + '-' + suffix + '-err');
     });
   }
@@ -1660,7 +1757,7 @@
   }
 
   /** @return {boolean} true when every card row has a description. */
-  function validateScreen4() {
+  function validateCards() {
     var ok = true;
     rowsContainer.querySelectorAll('.row-card').forEach(function (row) {
       var id = row.getAttribute('data-row-id');
@@ -1848,8 +1945,7 @@
         return {
           description: val('row-' + id + '-desc'),
           cost: val('row-' + id + '-cost'),
-          rawComp: val('row-' + id + '-rawcomp'),
-          gradedComp: val('row-' + id + '-gradedcomp')
+          rawComp: val('row-' + id + '-rawcomp')
         };
       }),
       comments: val('notes')
@@ -1862,7 +1958,7 @@
     if (!draftEnabled || !draftOrderId) return;
     var draft = collectDraft();
     var hasContent = draft.comments.trim() !== '' || draft.cards.some(function (c) {
-      return c.description.trim() !== '' || c.cost.trim() !== '' || c.rawComp.trim() !== '' || c.gradedComp.trim() !== '';
+      return c.description.trim() !== '' || c.cost.trim() !== '' || c.rawComp.trim() !== '';
     });
     if (hasContent) draftSet(DRAFT_PREFIX + draftOrderId, JSON.stringify(draft));
     else draftRemove(DRAFT_PREFIX + draftOrderId);
@@ -1908,7 +2004,8 @@
       savedAt: d.savedAt,
       cards: d.cards.slice(0, MAX_CARDS).map(function (c) {
         c = c || {};
-        return { description: clip(c.description), cost: clip(c.cost), rawComp: clip(c.rawComp), gradedComp: clip(c.gradedComp) };
+        // A draft saved before 10/16 may still hold gradedComp; it is dropped (the form no longer asks for it).
+        return { description: clip(c.description), cost: clip(c.cost), rawComp: clip(c.rawComp) };
       }),
       comments: typeof d.comments === 'string' ? d.comments.slice(0, MAX_COMMENTS_LEN) : ''
     };
@@ -1985,7 +2082,7 @@
     if (returnMethod === 'fanatics') vaultNumber = val('fanatics-vault').trim();
 
     var expMap = { 'exp-new': 'new', 'exp-return': 'returning', 'exp-seasoned': 'seasoned' };
-    var expChecked = document.querySelector('#screen-3 input[name="experience"]:checked');
+    var expChecked = document.querySelector('#collector-story input[name="experience"]:checked');
     var experience = expChecked ? (expMap[expChecked.id] || '') : '';
 
     // Keys must match apps-script/Code.js's ACQUIRED_LABELS/GOALS_LABELS exactly (its comments
@@ -2002,8 +2099,7 @@
       return {
         description: val('row-' + id + '-desc'),
         cost: val('row-' + id + '-cost'),
-        rawComp: val('row-' + id + '-rawcomp'),
-        gradedComp: val('row-' + id + '-gradedcomp')
+        rawComp: val('row-' + id + '-rawcomp')
       };
     });
 
@@ -2098,8 +2194,7 @@
   };
   var CARD_FIELD_UI = {
     cost: { suffix: 'cost', label: 'Your cost' },
-    rawComp: { suffix: 'rawcomp', label: 'Raw comp' },
-    gradedComp: { suffix: 'gradedcomp', label: 'Graded comp' }
+    rawComp: { suffix: 'rawcomp', label: 'Raw comp' }
   };
 
   /**
@@ -2115,18 +2210,20 @@
     if (m) {
       var ui = CONTACT_FIELD_UI[m[1]];
       if (!ui) return { kind: 'field', shown: false, screen: '2', words: 'Contact details: ' + m[1] + ' could not be accepted' };
-      var shownContact = ui.input ? showFieldError(ui.input, ui.err, TOO_LONG) : false;
-      return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + ': too long (200 characters max)' };
+      // The server rejects an empty phone (required) or any contact field over 200 characters.
+      var emptyContact = !!ui.input && val(ui.input).trim() === '';
+      var shownContact = ui.input ? showFieldError(ui.input, ui.err, emptyContact ? null : TOO_LONG) : false;
+      return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + (emptyContact ? ': needed' : ': too long (200 characters max)') };
     }
     if (path === 'vaultNumber') {
       var returnRadio = document.querySelector('input[name="return-method"]:checked');
       var fanatics = !!(returnRadio && returnRadio.id === 'return-fanatics');
       var shownVault = fanatics ? showFieldError('fanatics-vault', 'err-fanatics-vault', null) : showFieldError('psa-vault', 'err-psa-vault', null);
-      return { kind: 'field', shown: shownVault, screen: '2', words: (fanatics ? 'Fanatics Vault #' : 'PSA Vault #') + ': needed, 200 characters max' };
+      return { kind: 'field', shown: shownVault, screen: '4', words: (fanatics ? 'Fanatics Vault #' : 'PSA Vault #') + ': needed, 200 characters max' };
     }
     if (path === 'comments') {
       var shownComments = showFieldError('notes', 'err-notes', 'Too long (2000 characters max)');
-      return { kind: 'field', shown: shownComments, screen: '3', words: 'Anything else we should know?: too long (2000 characters max)' };
+      return { kind: 'field', shown: shownComments, screen: '1', words: 'Anything else we should know?: too long (2000 characters max)' };
     }
     if (path === 'signature.name') {
       return { kind: 'field', shown: showFieldError('signature-name', 'err-signature', null), screen: '5', words: 'Signature: type your full name' };
@@ -2147,22 +2244,22 @@
       if (CARD_FIELD_UI[sub]) {
         var cf = CARD_FIELD_UI[sub];
         var shownPrice = rowId !== undefined && showFieldError('row-' + rowId + '-' + cf.suffix, 'row-' + rowId + '-' + cf.suffix + '-err', 'Max 200 characters');
-        return { kind: 'field', shown: shownPrice, screen: '4', words: cardLabel + ' · ' + cf.label + ': too long (200 characters max)' };
+        return { kind: 'field', shown: shownPrice, screen: '3', words: cardLabel + ' · ' + cf.label + ': too long (200 characters max)' };
       }
       var shownDesc = rowId !== undefined && showFieldError('row-' + rowId + '-desc', 'row-' + rowId + '-desc-err', null);
-      return { kind: 'field', shown: shownDesc, screen: '4', words: cardLabel + ' · Card description: needed, 200 characters max' };
+      return { kind: 'field', shown: shownDesc, screen: '3', words: cardLabel + ' · Card description: needed, 200 characters max' };
     }
     if (path === 'cards') {
-      return { kind: 'field', shown: false, screen: '4', words: 'Cards: a form takes 1 to ' + MAX_CARDS + ' cards' };
+      return { kind: 'field', shown: false, screen: '3', words: 'Cards: a form takes 1 to ' + MAX_CARDS + ' cards' };
     }
     if (path === 'returnMethod') {
-      return { kind: 'field', shown: false, screen: '2', words: 'After grading, how should we handle your cards?: pick one of the options' };
+      return { kind: 'field', shown: false, screen: '4', words: 'After grading, how should we handle your cards?: pick one of the options' };
     }
     if (path === 'acquired') {
-      return { kind: 'field', shown: false, screen: '3', words: 'How did you acquire this collection?: an answer could not be read' };
+      return { kind: 'field', shown: false, screen: '1', words: 'How did you acquire this collection?: an answer could not be read' };
     }
     if (path === 'goals') {
-      return { kind: 'field', shown: false, screen: '3', words: 'What are your goals for this submission?: an answer could not be read' };
+      return { kind: 'field', shown: false, screen: '1', words: 'What are your goals for this submission?: an answer could not be read' };
     }
     if (path === 'submitKey') return { kind: 'key', shown: false, screen: '5', words: '' };
     if (path === 'disclaimerVersion') return { kind: 'reload', shown: false, screen: '5', words: '' };
@@ -2228,7 +2325,7 @@
    * @param {string} orderId
    * @param {string} conf
    * @param {string} key
-   * @return {Promise<{ok: boolean, submissionId?: string, cardCount?: number, error?: string}>}
+   * @return {Promise<{ok: boolean, submissionId?: string, cardCount?: number, shipTo?: string[], error?: string}>}
    */
   function confirmViaStatus(orderId, conf, key) {
     var attempt = 0;
@@ -2240,7 +2337,7 @@
         return apiGet('status', { order: orderId, conf: conf, key: key });
       }).then(function (res) {
         if (res && res.ok === true && res.status === 'submitted') {
-          return { ok: true, submissionId: res.submissionId, cardCount: res.cardCount };
+          return { ok: true, submissionId: res.submissionId, cardCount: res.cardCount, shipTo: res.shipTo };
         }
         return next();
       }, function (err) {
@@ -2293,7 +2390,7 @@
       if (res && res.ok === true && res.status === 'submitted') {
         submitInFlight = false;
         setSubmitting(false);
-        onSubmitSuccess({ ok: true, submissionId: res.submissionId, cardCount: res.cardCount }, true);
+        onSubmitSuccess({ ok: true, submissionId: res.submissionId, cardCount: res.cardCount, shipTo: res.shipTo }, true);
       } else if (res && res.ok === true && res.status === 'not_found') {
         dropSubmitKey(orderId);
         sendSubmission(orderId, conf, payload, holdNewSubmitKey(orderId, fp));
@@ -2401,6 +2498,7 @@
     var returnLabel = 'Return ship after grading';
     if (document.getElementById('return-psa').checked) returnLabel = 'Send to PSA Vault after grading';
     if (document.getElementById('return-fanatics').checked) returnLabel = 'Send to Fanatics Collect Vault after grading';
+    renderShipTo(lastSubmissionResponse && lastSubmissionResponse.shipTo);
     var orderName = currentOrder ? currentOrder.name : '';
     var parts = [orderName];
     if (count > 0) parts.push(count + ' card' + (count === 1 ? '' : 's'));
@@ -2441,28 +2539,61 @@
     document.getElementById('btn-start-over').hidden = (mode !== 'test');
   }
 
-  // ---- Copy address ---------------------------------------------------
+  // ---- Ship-to address ---------------------------------------------------
+  // What "Copy address" copies: the lines of the address shown, joined with ", ".
+  var shipToText = '';
+
+  /**
+   * Fills step 1's address box from the server's answer (`shipTo`, one string per line). The address
+   * is never written in this page (Steve 10/16: it must not be findable on the open web); the server
+   * sends it only after a submission. An answer without it says how to reach a person instead.
+   * @param {*} lines
+   * @return {void}
+   */
+  function renderShipTo(lines) {
+    var box = document.getElementById('ship-to-address');
+    var copyBtn = document.getElementById('btn-copy-address');
+    box.textContent = '';
+    var usable = Array.isArray(lines) && lines.length > 0 &&
+      lines.every(function (line) { return typeof line === 'string' && line.trim() !== ''; });
+    if (!usable) {
+      console.error('The form service sent no ship-to address.', lines);
+      shipToText = '';
+      renderMessage(box, 'Email ' + CONTACT_EMAIL + ' with your order number for the shipping address.');
+      copyBtn.hidden = true;
+      return;
+    }
+    lines.forEach(function (line, i) {
+      if (i > 0) box.appendChild(document.createElement('br'));
+      box.appendChild(document.createTextNode(line));
+    });
+    shipToText = lines.join(', ');
+    copyBtn.hidden = false;
+  }
+
   document.getElementById('btn-copy-address').addEventListener('click', function () {
     var btn = this;
-    var text = document.getElementById('copy-address-source').textContent;
-    function marked() {
-      btn.textContent = 'Copied';
+    var text = shipToText;
+    /** @param {string} label 'Copied' after a clipboard write; 'Address selected' when only the text could be selected. */
+    function marked(label) {
+      btn.textContent = label;
       btn.setAttribute('data-copied', 'true');
       setTimeout(function () { btn.textContent = 'Copy address'; btn.removeAttribute('data-copied'); }, 1800);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(text).then(marked, function () { fallbackSelect(); });
+      navigator.clipboard.writeText(text).then(function () { marked('Copied'); }, function () { fallbackSelect(); });
     } else {
       fallbackSelect();
     }
     function fallbackSelect() {
-      var el = document.getElementById('copy-address-source');
+      var el = document.getElementById('ship-to-address');
       var range = document.createRange();
       range.selectNodeContents(el);
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-      marked();
+      // Nothing reached the clipboard here, so the button must not say "Copied" (Codex review 10/18).
+      marked('Address selected');
     }
   });
 
@@ -2503,9 +2634,9 @@
     return groups.map(function (g) { return g.product + ' — ' + g.parts.join(', '); }).join(', ');
   }
 
-  /** @return {void} */
-  function resetScreen3() {
-    document.querySelectorAll('#screen-3 input[type="radio"], #screen-3 input[type="checkbox"]').forEach(function (i) { i.checked = false; });
+  /** Clears every "Tell us your collecting story" answer on screen 1. @return {void} */
+  function resetCollectorStory() {
+    document.querySelectorAll('#collector-story input[type="radio"], #collector-story input[type="checkbox"]').forEach(function (i) { i.checked = false; });
     document.getElementById('notes').value = '';
   }
 
@@ -2550,9 +2681,9 @@
     document.getElementById('psa-vault').value = '';
     document.getElementById('fanatics-vault').value = '';
     document.getElementById('consignment-interest').checked = false;
-    resetScreen3();
+    resetCollectorStory();
 
-    // ", Sam" or nothing — an order without a first name reads "Thanks for your order."
+    // ", Sam" or nothing — an order without a first name reads "Thank you for your order."
     var greetingName = String(order.customer.firstName || '').trim();
     document.getElementById('greeting-name').textContent = greetingName ? ', ' + greetingName : '';
     // order.name and each line's product title are server-returned strings; escape them before
@@ -2564,9 +2695,9 @@
     var startedRows = rowsContainer.querySelectorAll('.row-card').length;
     var cardWord = order.cardCount === 1 ? 'card' : 'cards';
     var rowWord = startedRows === 1 ? 'row' : 'rows';
-    document.getElementById('screen4-intro').textContent =
+    document.getElementById('cards-intro').textContent =
       'Your order has ' + order.cardCount + ' ' + cardWord + ', so we started with ' + startedRows + ' ' + rowWord +
-      '. One row per card. The three cost basis fields are optional.';
+      '. One row per card. The two cost basis fields are optional.';
 
     consentCheckbox.checked = false;
     signatureInput.value = '';
@@ -2614,6 +2745,7 @@
     submittedAgain = canResubmit ? { order: order, orderId: orderId, conf: conf } : null;
     document.getElementById('btn-submit-again').hidden = !canResubmit;
     document.getElementById('btn-start-over').hidden = (mode !== 'test');
+    renderShipTo(order.shipTo);
     showView('submitted');
   }
 
@@ -2746,7 +2878,7 @@
   });
 
   // ---- Navigation buttons ---------------------------------------------
-  document.getElementById('btn-start').addEventListener('click', function () { showView('2'); });
+  document.getElementById('btn-continue-1').addEventListener('click', function () { showView('2'); });
 
   document.getElementById('btn-back-2').addEventListener('click', function () { showView('1'); });
   document.getElementById('btn-continue-2').addEventListener('click', function () {
@@ -2755,13 +2887,13 @@
   });
 
   document.getElementById('btn-back-3').addEventListener('click', function () { showView('2'); });
-  document.getElementById('btn-continue-3').addEventListener('click', function () { showView('4'); });
+  document.getElementById('btn-continue-3').addEventListener('click', function () {
+    if (!validateCards()) { scrollToFirstError('3'); return; }
+    showView('4');
+  });
 
   document.getElementById('btn-back-4').addEventListener('click', function () { showView('3'); });
-  document.getElementById('btn-continue-4').addEventListener('click', function () {
-    if (!validateScreen4()) { scrollToFirstError('4'); return; }
-    showView('5');
-  });
+  document.getElementById('btn-continue-4').addEventListener('click', function () { showView('5'); });
 
   document.getElementById('btn-back-5').addEventListener('click', function () { showView('4'); });
 
