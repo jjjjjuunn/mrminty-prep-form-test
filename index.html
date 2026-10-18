@@ -948,8 +948,8 @@
       <div class="field-grid two-col" style="margin-top:14px;">
         <div class="field">
           <label class="field-label" for="phone">Phone</label>
-          <input type="tel" id="phone" maxlength="200" required>
-          <span class="field-error" id="err-phone" hidden>Please enter a phone number.</span>
+          <input type="tel" id="phone" placeholder="e.g. 949-555-0123" maxlength="200" required>
+          <span class="field-error" id="err-phone" hidden>Please enter a full phone number with area code. Outside the US, start with + and your country code.</span>
         </div>
         <div class="field">
           <label class="field-label" for="instagram">Instagram handle</label>
@@ -1608,15 +1608,26 @@
   }
   document.getElementById('country').addEventListener('input', applyCountryRules);
 
-  /** @return {boolean} true when every required screen-2 field is filled. */
+  /**
+   * Same rule as the server's isPlausiblePhone_: 10-15 digits, other characters ignored (Russell 10/18).
+   * @param {string} value
+   * @return {boolean}
+   */
+  function isPlausiblePhone(value) {
+    var digits = String(value || '').replace(/\D/g, '').length;
+    return digits >= 10 && digits <= 15;
+  }
+
+  /** @return {boolean} true when every required screen-2 field is filled (and the phone has 10-15 digits). */
   function validateScreen2() {
     var ok = true;
     var us = isUsCountry(val('country'));
     screen2Required.forEach(function (pair) {
       var optional = !us && (pair[0] === 'state' || pair[0] === 'zip');
-      var isEmpty = !optional && document.getElementById(pair[0]).value.trim() === '';
-      setError(pair[0], pair[1], isEmpty);
-      if (isEmpty) ok = false;
+      var value = document.getElementById(pair[0]).value;
+      var isBad = pair[0] === 'phone' ? !isPlausiblePhone(value) : (!optional && value.trim() === '');
+      setError(pair[0], pair[1], isBad);
+      if (isBad) ok = false;
     });
     return ok;
   }
@@ -2210,10 +2221,12 @@
     if (m) {
       var ui = CONTACT_FIELD_UI[m[1]];
       if (!ui) return { kind: 'field', shown: false, screen: '2', words: 'Contact details: ' + m[1] + ' could not be accepted' };
-      // The server rejects an empty phone (required) or any contact field over 200 characters.
+      // The server rejects a phone without 10-15 digits (required) or any contact field over 200 characters.
       var emptyContact = !!ui.input && val(ui.input).trim() === '';
-      var shownContact = ui.input ? showFieldError(ui.input, ui.err, emptyContact ? null : TOO_LONG) : false;
-      return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + (emptyContact ? ': needed' : ': too long (200 characters max)') };
+      var badPhone = m[1] === 'phone' && !emptyContact && !isPlausiblePhone(val('phone'));
+      var shownContact = ui.input ? showFieldError(ui.input, ui.err, emptyContact || badPhone ? null : TOO_LONG) : false;
+      var contactWords = emptyContact ? ': needed' : (badPhone ? ': enter the full number with area code' : ': too long (200 characters max)');
+      return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + contactWords };
     }
     if (path === 'vaultNumber') {
       var returnRadio = document.querySelector('input[name="return-method"]:checked');
