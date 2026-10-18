@@ -426,7 +426,8 @@
   .option-reveal[hidden] { display: none; }
 
   .checkbox-row { display: flex; align-items: flex-start; gap: 10px; margin-top: 16px; }
-  .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex: none; }
+  /* Steve 10/16: "When selected they should become Minty" — the two plain checkboxes too, not the browser's blue. */
+  .checkbox-row input[type="checkbox"] { width: 18px; height: 18px; margin-top: 2px; flex: none; accent-color: var(--color-mint); }
   .checkbox-row label { font-size: 14px; line-height: 1.4; }
 
   .tile-grid {
