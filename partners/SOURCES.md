@@ -11,7 +11,7 @@ own website on 2026-10-19 (Private Sales picture: mrminty.com, 2026-10-20).
 | goldin.svg | goldin.co, logo inside the site's script bundle | SVG, 2,670 B | viewBox trimmed to the word "Goldin" |
 | alt.svg | alt.xyz/logo.svg | SVG, 726 B | dropped the Illustrator comment |
 | quick-consign.png | quickconsigncards.com/qc-full-dark.png | PNG 461×140, 38,206 B | none |
-| ship-my-cards.png | shipmycards.com/wp-content/uploads/2025/07/brand_logo_light.png | PNG 70×70, 2,874 B | none — the only logo file on their site, so it looks soft on high-resolution screens |
+| ship-my-cards.png | trade.shipmycards.com/assets/images/logo.png (downloaded 2026-10-24, Russell approved; same mark as the 70×70 file on shipmycards.com used until v1.10.1) | PNG 526×526, 419,807 B | resized to 240×240 (macOS `sips -Z 240`), 55,404 B |
 | private-sales-buying.jpg | mrminty.com/cdn/shop/files/Screenshot_2026-08-22_at_1.43.42_AM.png | PNG 770×666, 408,715 B | cropped to the top "BUYING" line (580×264, which also drops a small icon in the corner), saved as JPEG |
 
 Fanatics / PWCC Vault and Fanatics Collect use the same logo: per Fanatics' 2024-07-16 press release

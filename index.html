@@ -230,20 +230,7 @@
   }
   .order-card .dot { color: var(--color-accent); }
 
-  .need-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  @media (min-width: 480px) {
-    .need-grid { grid-template-columns: repeat(2, 1fr); }
-  }
-  @media (min-width: 860px) {
-    .need-grid { grid-template-columns: repeat(4, 1fr); }
-  }
-
-  /* "Tell us your collecting story" sits under the four cells on screen 1. */
+  /* "Tell us your collecting story" sits under the order line on screen 1. */
   .story-block {
     padding-top: 24px;
     border-top: 1px solid var(--color-border);
@@ -253,18 +240,6 @@
     line-height: 1.2;
     margin: 0 0 8px;
   }
-
-  .need-item {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    background: var(--color-surface-alt);
-    border-radius: var(--radius-sm);
-    padding: 12px;
-    font-size: 13.5px;
-    color: var(--color-ink);
-  }
-  .need-item svg { flex: none; color: var(--color-accent); margin-top: 1px; }
 
   .btn {
     font-size: 15px;
@@ -309,6 +284,14 @@
     font-size: 15px;
     font-weight: 700;
     margin: 26px 0 12px;
+  }
+  /* Screen 4 group sub-headers (VAULTING / AUCTION / CONSIGNMENT) look exactly like the screen title
+     "VIP POST GRADING SERVICES" above them: same size, weight and font (Steve 10/18 comments 2, p4 1a-c). */
+  .section-heading.vip-group-title {
+    font-family: var(--font-display);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.15;
   }
   .section-hint {
     font-family: var(--font-body);
@@ -371,18 +354,17 @@
   .field.has-error textarea { border-color: var(--color-danger); }
 
   .option-list { display: grid; gap: 10px; margin-top: 10px; }
-  /* Three across (two for CONSIGNMENT): each card is two rows of the list's grid (subgrid) — row 1 the
-     option box, row 2 the vault-number field when it is open — so the option boxes in a row are always
-     the same height, like the screen 1 tiles (Russell 10/18). */
+  /* Three across (two for CONSIGNMENT). The option boxes in a row stretch to the same height, like the
+     screen 1 tiles (Russell 10/18). */
   @media (min-width: 860px) {
-    .option-list { grid-template-columns: repeat(3, 1fr); row-gap: 0; }
+    .option-list { grid-template-columns: repeat(3, 1fr); }
     .option-list.cols-2 { grid-template-columns: repeat(2, 1fr); }
-    .option-card { display: grid; grid-row: span 2; grid-template-rows: subgrid; }
   }
-  .option-card { position: relative; }
+  .option-card { position: relative; display: flex; flex-direction: column; }
+  .option-card > label { flex: 1; }
   /* No visible checkbox: the card itself shows the choice, with a tick when selected, like the screen 1
      tiles (Russell 10/18). The checkbox stays in place for the keyboard and screen readers; clicks go
-     through the label. Only the card's own checkbox (a direct child), not the vault-number box. */
+     through the label. */
   .option-card > input {
     position: absolute;
     top: 16px;
@@ -393,8 +375,7 @@
     opacity: 0;
     pointer-events: none;
   }
-  /* Only the option's own label (the input's next sibling) is the card; the vault-number label inside
-     .option-reveal stays a plain field label. */
+  /* The option's own label (the input's next sibling) is the card. */
   .option-card > label {
     position: relative;
     display: flex;
@@ -429,33 +410,46 @@
     outline-offset: 2px;
   }
   .option-title { display: block; font-weight: 700; font-size: 15px; margin-bottom: 3px; }
-  /* Partner logos (Steve 10/18 comments 2, page 4: "[Add Logo] PSA Vault"). Each sits on its own white
-     chip so it reads the same on the white card, the mint selected card and the dark theme. Phones: logo
-     left of the name, like Steve's list. Three across (860px and up): logo on top — the cards are too
-     narrow there for both side by side. The img width/height are the logo fitted into the chip. */
-  .option-card > label.has-logo { flex-direction: row; align-items: center; justify-content: flex-start; gap: 12px; }
+  /* Partner logos (Steve 10/18 comments 2, page 4: "[Add Logo] PSA Vault"; 10/23 notes: centred and
+     larger). Each sits on its own white chip so it reads the same on the white card, the mint selected
+     card and the dark theme. The chip is centred in the card, with the name and description below it
+     keeping their left alignment. About 1.5 times the earlier size: the chip is 192x72 (was 128x48) and
+     each img's width/height attributes are the earlier ones times 1.5. The chip and the img are capped
+     at the card's width (max-width), so a wide logo stays inside the card with its padding. The tick
+     moves to the card's top right corner, so the left and right padding match and the chip is centred in
+     the whole card. */
+  .option-card > label.has-logo {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+  }
+  .option-card > label.has-logo .tick { top: 16px; transform: none; }
   .option-text { display: flex; flex-direction: column; min-width: 0; }
   .option-logo {
     flex: none;
+    align-self: center;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 128px;
-    height: 48px;
-    padding: 4px 8px;
+    box-sizing: border-box;
+    width: 192px;
+    max-width: 100%;
+    height: 72px;
+    padding: 4px 12px;
     background: #ffffff;
     border-radius: var(--radius-sm);
     overflow: hidden;
   }
-  .option-logo img { display: block; }
+  .option-logo img { display: block; max-width: 100%; height: auto; max-height: 100%; }
   .option-logo.photo { padding: 0; }
-  .option-logo.photo img { width: 100%; height: 100%; object-fit: cover; }
-  @media (min-width: 860px) {
-    .option-card > label.has-logo { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 10px; }
-  }
+  .option-logo.photo img { width: 100%; height: 100%; max-height: none; object-fit: cover; }
   .option-helper { display: block; font-size: 13px; color: var(--color-ink-muted); font-family: var(--font-body); }
-  .option-reveal { margin: 10px 0 0 0; }
-  .option-reveal[hidden] { display: none; }
+  /* The two vault fields (customer # and vault #) sit side by side below the three vault cards (one
+     partner at most can be picked, so one panel serves them all). */
+  .vault-fields { margin: 14px 0 0; }
+  .vault-fields[hidden] { display: none; }
   /* Screen 4 groups (Steve 10/18 comments 2, page 4). */
   .vip-desc { font-size: 14px; line-height: 1.45; color: var(--color-ink-muted); margin: -6px 0 0; }
   .vip-note { font-size: 13px; line-height: 1.45; color: var(--color-ink-muted); margin: 10px 0 0; }
@@ -891,25 +885,6 @@
       <p class="screen-body">Thank you for your order<span id="greeting-name"></span>. This form takes under 5 minutes and replaces the Google Doc.</p>
       <p class="order-card" id="order-card-line"></p>
 
-      <div class="need-grid">
-        <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 7h11v9H3z"></path><path d="M14 10h4l3 3v3h-7"></path><circle cx="7" cy="17.5" r="1.8"></circle><circle cx="17" cy="17.5" r="1.8"></circle></svg>
-          <span>Shipping confirmation</span>
-        </div>
-        <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"></path></svg>
-          <span>Collector insight</span>
-        </div>
-        <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="5" width="14" height="10" rx="2"></rect><rect x="7" y="9" width="14" height="10" rx="2" fill="none"></rect></svg>
-          <span>List your cards</span>
-        </div>
-        <div class="need-item">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"></path><path d="M13.5 6.5l4 4"></path></svg>
-          <span>Consent</span>
-        </div>
-      </div>
-
       <div class="story-block" id="collector-story">
         <h2 class="story-title">Tell us about the collection, and your hobby journey</h2>
         <p class="screen-body">Select all that apply.</p>
@@ -954,7 +929,7 @@
         </div>
 
         <div class="field">
-          <label class="field-label" for="notes">Anything else we should know?</label>
+          <label class="field-label" for="notes">Anything else we should know? / How did you hear about us?</label>
           <textarea id="notes" rows="2" maxlength="2000"></textarea>
           <span class="field-error" id="err-notes" hidden>Please check this field.</span>
         </div>
@@ -1071,7 +1046,9 @@
 
     <!-- Screen 4: after grading (Steve 10/16: its own screen, after the cards). Steve 10/18 comments 2,
          page 4 (his words, spelling fixed): three groups and one checkbox. VAULTING takes at most one
-         partner — none = the cards are shipped back (plan D2 A); AUCTION and CONSIGNMENT take any.
+         partner — none = the cards are shipped back (plan D2 A), and the picked partner opens two fields
+         below the cards (customer # required, vault # optional, v1.11); AUCTION and CONSIGNMENT take
+         any. The last checkbox is "not interested in selling" (notSelling, v1.11).
          The name/value pairs are the server's VAULT_PARTNERS, AUCTION_PARTNERS and CONSIGNMENT_OPTIONS
          keys (a test checks). Logos and the Private Sales picture are files in partners/ (sources in
          partners/SOURCES.md); alt="" because the name is written right next to each one. -->
@@ -1080,66 +1057,65 @@
       <p class="screen-body">Did you know our VIP services continue after grading? Select all that you are interested in.</p>
 
       <div role="group" aria-labelledby="vip-vaulting">
-        <h2 class="section-heading" id="vip-vaulting">VAULTING</h2>
+        <h2 class="section-heading vip-group-title" id="vip-vaulting">VAULTING</h2>
         <p class="vip-desc">Secure handling of your returned PSA order to one of our Vault Partners.</p>
         <div class="option-list">
         <div class="option-card">
-          <input type="checkbox" name="vault-partner" value="psa" id="vault-partner-psa">
+          <input type="checkbox" name="vault-partner" value="psa" id="vault-partner-psa" data-short="PSA">
           <label for="vault-partner-psa" class="has-logo">
-            <span class="option-logo"><img src="partners/psa-vault.svg" alt="" width="112" height="19"></span>
+            <span class="option-logo"><img src="partners/psa-vault.svg" alt="" width="168" height="29"></span>
             <span class="option-text">
               <span class="option-title">PSA Vault</span>
             </span>
             <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
-          <div class="option-reveal field" id="reveal-vault-psa" hidden>
-            <label class="field-label" for="vault-psa-number">PSA Vault #</label>
-            <input type="text" id="vault-psa-number" maxlength="200">
-            <span class="field-error" id="err-vault-psa-number" hidden>Please enter your PSA Vault #.</span>
-          </div>
         </div>
         <div class="option-card">
-          <input type="checkbox" name="vault-partner" value="fanatics" id="vault-partner-fanatics">
+          <input type="checkbox" name="vault-partner" value="fanatics" id="vault-partner-fanatics" data-short="Fanatics / PWCC">
           <label for="vault-partner-fanatics" class="has-logo">
-            <span class="option-logo"><img src="partners/fanatics-collect.svg" alt="" width="112" height="16"></span>
+            <span class="option-logo"><img src="partners/fanatics-collect.svg" alt="" width="168" height="24"></span>
             <span class="option-text">
               <span class="option-title">Fanatics / PWCC Vault</span>
             </span>
             <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
-          <div class="option-reveal field" id="reveal-vault-fanatics" hidden>
-            <label class="field-label" for="vault-fanatics-number">Fanatics / PWCC Vault #</label>
-            <input type="text" id="vault-fanatics-number" maxlength="200">
-            <span class="field-error" id="err-vault-fanatics-number" hidden>Please enter your Fanatics / PWCC Vault #.</span>
-          </div>
         </div>
         <div class="option-card">
-          <input type="checkbox" name="vault-partner" value="shipmycards" id="vault-partner-shipmycards">
+          <input type="checkbox" name="vault-partner" value="shipmycards" id="vault-partner-shipmycards" data-short="Ship My Cards">
           <label for="vault-partner-shipmycards" class="has-logo">
-            <span class="option-logo"><img src="partners/ship-my-cards.png" alt="" width="40" height="40"></span>
+            <span class="option-logo"><img src="partners/ship-my-cards.png" alt="" width="60" height="60"></span>
             <span class="option-text">
               <span class="option-title">Ship My Cards</span>
             </span>
             <svg class="tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg>
           </label>
-          <div class="option-reveal field" id="reveal-vault-shipmycards" hidden>
-            <label class="field-label" for="vault-shipmycards-number">Ship My Cards account #</label>
-            <input type="text" id="vault-shipmycards-number" maxlength="200">
-            <span class="field-error" id="err-vault-shipmycards-number" hidden>Please enter your Ship My Cards account #.</span>
-          </div>
         </div>
+        </div>
+        <div class="vault-fields" id="vault-fields" hidden>
+          <div class="field-grid two-col">
+            <div class="field">
+              <label class="field-label" for="vault-customer-number" id="label-vault-customer">Vault Customer #</label>
+              <input type="text" id="vault-customer-number" maxlength="200" required>
+              <span class="field-error" id="err-vault-customer-number" hidden>Please enter your customer #.</span>
+            </div>
+            <div class="field">
+              <label class="field-label" for="vault-number" id="label-vault-number">Vault # (optional)</label>
+              <input type="text" id="vault-number" maxlength="200">
+              <span class="field-error" id="err-vault-number" hidden>Please check your vault # (200 characters max).</span>
+            </div>
+          </div>
         </div>
         <p class="vip-note">Leave blank to have your cards shipped back to you. Return shipping is invoiced after grading.</p>
       </div>
 
       <div role="group" aria-labelledby="vip-auction">
-        <h2 class="section-heading" id="vip-auction">AUCTION</h2>
+        <h2 class="section-heading vip-group-title" id="vip-auction">AUCTION</h2>
         <p class="vip-desc">Secure handling and great rates with our Auction Partners.</p>
         <div class="option-list">
         <div class="option-card">
           <input type="checkbox" name="auction" value="goldin" id="auction-goldin">
           <label for="auction-goldin" class="has-logo">
-            <span class="option-logo"><img src="partners/goldin.svg" alt="" width="112" height="31"></span>
+            <span class="option-logo"><img src="partners/goldin.svg" alt="" width="168" height="47"></span>
             <span class="option-text">
               <span class="option-title">Goldin Auctions</span>
               <span class="option-helper">Rate 105% of Hammer</span>
@@ -1150,7 +1126,7 @@
         <div class="option-card">
           <input type="checkbox" name="auction" value="fanatics_collect" id="auction-fanatics_collect">
           <label for="auction-fanatics_collect" class="has-logo">
-            <span class="option-logo"><img src="partners/fanatics-collect.svg" alt="" width="112" height="16"></span>
+            <span class="option-logo"><img src="partners/fanatics-collect.svg" alt="" width="168" height="24"></span>
             <span class="option-text">
               <span class="option-title">Fanatics Collect</span>
               <span class="option-helper">Rate 105% of Hammer</span>
@@ -1161,7 +1137,7 @@
         <div class="option-card">
           <input type="checkbox" name="auction" value="alt" id="auction-alt">
           <label for="auction-alt" class="has-logo">
-            <span class="option-logo"><img src="partners/alt.svg" alt="" width="40" height="40"></span>
+            <span class="option-logo"><img src="partners/alt.svg" alt="" width="60" height="60"></span>
             <span class="option-text">
               <span class="option-title">ALT Auctions</span>
               <span class="option-helper">Rate 105% of Hammer</span>
@@ -1173,13 +1149,13 @@
       </div>
 
       <div role="group" aria-labelledby="vip-consignment">
-        <h2 class="section-heading" id="vip-consignment">CONSIGNMENT</h2>
+        <h2 class="section-heading vip-group-title" id="vip-consignment">CONSIGNMENT</h2>
         <p class="vip-desc">Lean on our hobby network to liquidate. Our commission is 10%.</p>
         <div class="option-list cols-2">
         <div class="option-card">
           <input type="checkbox" name="consignment" value="quick_consign" id="consignment-quick_consign">
           <label for="consignment-quick_consign" class="has-logo">
-            <span class="option-logo"><img src="partners/quick-consign.png" alt="" width="112" height="34"></span>
+            <span class="option-logo"><img src="partners/quick-consign.png" alt="" width="168" height="51"></span>
             <span class="option-text">
               <span class="option-title">Quick Consign</span>
               <span class="option-helper">Bulk eBay auction consignment</span>
@@ -1190,7 +1166,7 @@
         <div class="option-card">
           <input type="checkbox" name="consignment" value="private_sales" id="consignment-private_sales">
           <label for="consignment-private_sales" class="has-logo">
-            <span class="option-logo photo"><img src="partners/private-sales-buying.jpg" alt="" width="128" height="48"></span>
+            <span class="option-logo photo"><img src="partners/private-sales-buying.jpg" alt="" width="192" height="72"></span>
             <span class="option-text">
               <span class="option-title">Private Sales</span>
               <span class="option-helper">Through our nationwide network of buying groups.</span>
@@ -1202,8 +1178,8 @@
       </div>
 
       <div class="checkbox-row">
-        <input type="checkbox" id="additional-services">
-        <label for="additional-services">I am interested in additional services after grading.</label>
+        <input type="checkbox" id="not-selling">
+        <label for="not-selling">I am NOT interested in selling my cards.</label>
       </div>
 
       <div class="screen-footer">
@@ -1266,14 +1242,14 @@
             <button type="button" class="copy-btn" id="btn-copy-address">Copy address</button>
           </div>
         </div>
-        <!-- Steps 2-5: Steve 10/18 comments 2, page 6 (his words; spelling fixed). Same text as Code.js SHIPPING_GUIDE. -->
+        <!-- Steps 2-7: Steve 10/18 comments 2, page 6, and the 10/23 notes (his words; spelling fixed). Steps 2-6 are Code.js SHIPPING_GUIDE and step 7 is CONFIRM_LINE; the customer email shows the same steps (a test checks both). -->
         <div class="step-item">
           <span class="step-num">2</span>
           <div>
             <h3>How to pack your cards</h3>
             <ul class="checklist">
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Place card in a penny sleeve, then a semi-rigid holder.</span></li>
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Sandwich semi-rigid between two pieces of rigid board (like Card Guard).</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Sandwich semi-rigid between two pieces of rigid board (like Ding Defend).</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Tape ends of rigid board.</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Wrap in bubble wrap to prevent movement in package.</span></li>
             </ul>
@@ -1300,7 +1276,7 @@
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Fast is always the best way to ensure delivery.</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>2nd-day shipping is recommended.</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Overnight is recommended for cards over $5,000.</span></li>
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Do not use signature service.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Signature service is required for all packages to comply with insurance.</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Never ship with long saver services like "Ground Saver".<ul class="sublist"><li>It's the best way to get your package lost.</li></ul></span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Plan ahead. Avoid shipping on weekends. It's an extra day for a package to be in the system.</span></li>
             </ul>
@@ -1311,7 +1287,7 @@
           <div>
             <h3>Declaration and insurance tips</h3>
             <ul class="checklist">
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Item description: Leave this blank. It's a bad idea to put anything card-related. You are just tipping off bad actors.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Item description: Leave this blank. It's a bad idea to put anything card-related. You might tip someone off.</span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Raw card insurance: CARRIER INSURANCE IS NOT NEEDED FOR RAW CARDS.<ul class="sublist"><li>Getting USPS/UPS/FedEx to pay out an insurance claim for lost raw (ungraded) trading cards is very difficult and often results in a denied claim.</li><li>High insurance amounts will tip off bad actors.</li></ul></span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Graded card insurance: Carriers will insure parcels with graded cards, but the limit is low.<ul class="sublist"><li>We recommend FedEx Overnight by 8am for anything over $5k.</li><li>Flying is always more secure than shipping.</li></ul></span></li>
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>We are insured for up to $250,000.</span></li>
@@ -1321,7 +1297,16 @@
         <div class="step-item">
           <span class="step-num">6</span>
           <div>
-            <h3>We will confirm within 24 hours of package delivery.</h3>
+            <h3>Provide us your tracking number for incoming shipments.</h3>
+            <ul class="checklist">
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Reply to your confirmation email with the carrier and tracking number.</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="step-item">
+          <span class="step-num">7</span>
+          <div>
+            <h3>Please allow for up to 24 hours after notification of parcel delivery to confirm contents are correct and send order acknowledgement.</h3>
           </div>
         </div>
       </div>
@@ -1742,7 +1727,7 @@
   screen2Required.forEach(function (pair) { clearErrorOnInput(pair[0], pair[1]); });
   clearErrorOnInput('country', 'err-country');
   clearErrorOnInput('instagram', 'err-instagram');
-  document.querySelectorAll('#screen-4 .option-reveal input').forEach(function (input) {
+  document.querySelectorAll('#vault-fields input').forEach(function (input) {
     clearErrorOnInput(input.id, 'err-' + input.id);
   });
   clearErrorOnInput('notes', 'err-notes');
@@ -1808,8 +1793,10 @@
   }
 
   // Screen 4 VAULTING: at most one partner (plan D2 A). Picking one unticks the others; picking it
-  // again unticks it (= shipped back). Its account # box shows only while it is picked.
+  // again unticks it (= shipped back). The two vault fields below the cards (customer # required, vault #
+  // optional, v1.11) show only while a partner is picked, named after it (the checkbox's data-short).
   var vaultBoxes = Array.prototype.slice.call(document.querySelectorAll('input[name="vault-partner"]'));
+  var VAULT_FIELD_IDS = ['vault-customer-number', 'vault-number'];
 
   /** @return {string} The picked vault partner's key, or '' when none (the cards are shipped back). */
   function pickedVault() {
@@ -1817,28 +1804,43 @@
     return box ? box.value : '';
   }
 
-  /** Shows the picked partner's account # box, hides (and clears the error of) the others. @return {void} */
+  /**
+   * Shows the two vault fields under the picked partner's short name, or hides them (and clears their
+   * errors) when no partner is picked.
+   * @return {void}
+   */
   function syncVaultReveals() {
-    vaultBoxes.forEach(function (box) {
-      document.getElementById('reveal-vault-' + box.value).hidden = box.checked !== true;
-      if (!box.checked) setError('vault-' + box.value + '-number', 'err-vault-' + box.value + '-number', false);
-    });
+    var box = document.querySelector('input[name="vault-partner"]:checked');
+    document.getElementById('vault-fields').hidden = box === null;
+    if (box === null) {
+      VAULT_FIELD_IDS.forEach(function (id) { setError(id, 'err-' + id, false); });
+      return;
+    }
+    var shortName = box.getAttribute('data-short');
+    document.getElementById('label-vault-customer').textContent = shortName + ' Customer #';
+    document.getElementById('label-vault-number').textContent = shortName + ' Vault # (optional)';
   }
 
+  /** Empties both vault fields: a number typed for one partner is not another partner's. @return {void} */
+  function clearVaultFields() {
+    VAULT_FIELD_IDS.forEach(function (id) { document.getElementById(id).value = ''; });
+  }
+
+  var lastVaultPartner = '';
   vaultBoxes.forEach(function (box) {
     box.addEventListener('change', function () {
       if (box.checked) vaultBoxes.forEach(function (other) { if (other !== box) other.checked = false; });
+      if (pickedVault() !== lastVaultPartner) clearVaultFields();
+      lastVaultPartner = pickedVault();
       syncVaultReveals();
     });
   });
 
-  /** @return {boolean} false when the picked vault partner has no account # (its box is then highlighted). */
+  /** @return {boolean} false when a vault partner is picked but the customer # is empty (its box is then highlighted). */
   function validateScreen4() {
-    var partner = pickedVault();
-    if (!partner) return true;
-    var inputId = 'vault-' + partner + '-number';
-    var isBad = val(inputId).trim() === '';
-    setError(inputId, 'err-' + inputId, isBad);
+    if (!pickedVault()) return true;
+    var isBad = val('vault-customer-number').trim() === '';
+    setError('vault-customer-number', 'err-vault-customer-number', isBad);
     return !isBad;
   }
 
@@ -2061,10 +2063,11 @@
     var entered = JSON.stringify({
       contact: payload.contact,
       returnMethod: payload.returnMethod,
+      vaultCustomerNumber: payload.vaultCustomerNumber,
       vaultNumber: payload.vaultNumber,
       auction: payload.auction,
       consignment: payload.consignment,
-      additionalServices: payload.additionalServices,
+      notSelling: payload.notSelling,
       experience: payload.experience,
       acquired: payload.acquired,
       goals: payload.goals,
@@ -2275,7 +2278,6 @@
   function buildPayload(submitKey) {
     // No vault partner picked = 'return' (shipped back).
     var returnMethod = pickedVault() || 'return';
-    var vaultNumber = returnMethod === 'return' ? '' : val('vault-' + returnMethod + '-number').trim();
     /** @param {string} name @return {string[]} The values of the ticked boxes with this name, in page order. */
     function tickedValues(name) {
       return Array.prototype.map.call(document.querySelectorAll('input[name="' + name + '"]:checked'), function (box) { return box.value; });
@@ -2303,7 +2305,7 @@
       };
     });
 
-    return {
+    var payload = {
       api: 'submit',
       submitKey: submitKey,
       order: currentOrder ? currentOrder.orderId : '',
@@ -2321,10 +2323,9 @@
         instagram: val('instagram')
       },
       returnMethod: returnMethod,
-      vaultNumber: vaultNumber,
       auction: tickedValues('auction'),
       consignment: tickedValues('consignment'),
-      additionalServices: document.getElementById('additional-services').checked === true,
+      notSelling: document.getElementById('not-selling').checked === true,
       experience: experience,
       acquired: acquired,
       goals: goals,
@@ -2338,6 +2339,12 @@
       },
       disclaimerVersion: DISCLAIMER_VERSION
     };
+    // The vault numbers go only with a vault partner; shipped back sends neither key.
+    if (returnMethod !== 'return') {
+      payload.vaultCustomerNumber = val('vault-customer-number').trim();
+      payload.vaultNumber = val('vault-number').trim();
+    }
+    return payload;
   }
 
   /** @param {boolean} isSubmitting @param {string=} label Button text while busy (default "Submitting…"). @return {void} */
@@ -2419,16 +2426,19 @@
       var contactWords = emptyContact ? ': needed' : (badPhone ? ': enter the full number with area code' : ': too long (200 characters max)');
       return { kind: 'field', shown: shownContact, screen: '2', words: ui.label + contactWords };
     }
+    if (path === 'vaultCustomerNumber') {
+      var customerShown = pickedVault() ? showFieldError('vault-customer-number', 'err-vault-customer-number', null) : false;
+      var customerLabel = document.getElementById('label-vault-customer').textContent;
+      return { kind: 'field', shown: customerShown, screen: '4', words: customerLabel + ': needed, 200 characters max' };
+    }
     if (path === 'vaultNumber') {
-      var partner = pickedVault();
-      var vaultInput = 'vault-' + partner + '-number';
-      var shownVault = partner ? showFieldError(vaultInput, 'err-' + vaultInput, null) : false;
-      var vaultLabel = partner ? document.querySelector('label[for="' + vaultInput + '"]').textContent : 'Vault #';
-      return { kind: 'field', shown: shownVault, screen: '4', words: vaultLabel + ': needed, 200 characters max' };
+      var vaultShown = pickedVault() ? showFieldError('vault-number', 'err-vault-number', null) : false;
+      var vaultLabel = document.getElementById('label-vault-number').textContent;
+      return { kind: 'field', shown: vaultShown, screen: '4', words: vaultLabel + ': too long (200 characters max)' };
     }
     if (path === 'comments') {
       var shownComments = showFieldError('notes', 'err-notes', 'Too long (2000 characters max)');
-      return { kind: 'field', shown: shownComments, screen: '1', words: 'Anything else we should know?: too long (2000 characters max)' };
+      return { kind: 'field', shown: shownComments, screen: '1', words: 'Anything else we should know? / How did you hear about us?: too long (2000 characters max)' };
     }
     if (path === 'signature.name') {
       return { kind: 'field', shown: showFieldError('signature-name', 'err-signature', null), screen: '5', words: 'Signature: type your full name' };
@@ -2460,8 +2470,8 @@
     if (path === 'returnMethod') {
       return { kind: 'field', shown: false, screen: '4', words: 'Vaulting: pick one partner, or none' };
     }
-    if (path === 'auction' || path === 'consignment' || path === 'additionalServices') {
-      var vipGroup = { auction: 'Auction', consignment: 'Consignment', additionalServices: 'Additional services' }[path];
+    if (path === 'auction' || path === 'consignment' || path === 'notSelling') {
+      var vipGroup = { auction: 'Auction', consignment: 'Consignment', notSelling: 'Not interested in selling' }[path];
       return { kind: 'field', shown: false, screen: '4', words: vipGroup + ': an answer could not be read' };
     }
     if (path === 'acquired') {
@@ -2886,7 +2896,8 @@
     applyCountryRules();
 
     document.querySelectorAll('#screen-4 input[type="checkbox"]').forEach(function (box) { box.checked = false; });
-    document.querySelectorAll('#screen-4 .option-reveal input').forEach(function (input) { input.value = ''; });
+    clearVaultFields();
+    lastVaultPartner = '';
     syncVaultReveals();
     resetCollectorStory();
 
