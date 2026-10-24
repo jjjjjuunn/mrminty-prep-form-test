@@ -731,6 +731,22 @@
   .checklist .sublist li { display: list-item; margin-top: 4px; }
   .step-item .step-note { margin-top: 8px; font-size: 13px; color: var(--color-ink-muted); }
 
+  /* Screen 6 step 6: the customer comes back with the same link after shipping. */
+  .tracking-box {
+    display: grid;
+    gap: 12px;
+    margin-top: 12px;
+    padding: 14px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-surface);
+  }
+  .tracking-box .btn { justify-self: start; }
+  .step-item .tracking-status { color: var(--color-ink); }
+  .step-item .tracking-status.is-error { color: var(--color-danger); font-weight: 600; }
+  .tracking-recorded-title { font-weight: 700; }
+  .tracking-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; word-break: break-all; }
+
   .done-footer {
     border-top: 1px solid var(--color-border);
     padding-top: 16px;
@@ -1299,8 +1315,40 @@
           <div>
             <h3>Provide us your tracking number for incoming shipments.</h3>
             <ul class="checklist">
-              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>Reply to your confirmation email with the carrier and tracking number.</span></li>
+              <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>After you ship, open your prep form link again and enter the carrier and tracking number.</span></li>
             </ul>
+            <div class="tracking-box" id="tracking-box">
+              <div class="field-grid two-col">
+                <div class="field">
+                  <label class="field-label" for="tracking-carrier">Carrier</label>
+                  <select id="tracking-carrier">
+                    <option value="">Choose…</option>
+                    <option value="usps">USPS</option>
+                    <option value="ups">UPS</option>
+                    <option value="fedex">FedEx</option>
+                    <option value="dhl">DHL</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <span class="field-error" id="err-tracking-carrier" hidden>Please choose a carrier.</span>
+                </div>
+                <div class="field">
+                  <label class="field-label" for="tracking-number">Tracking number</label>
+                  <input type="text" id="tracking-number" maxlength="60" autocomplete="off" autocapitalize="characters" spellcheck="false">
+                  <span class="field-error" id="err-tracking-number" hidden>Please enter the tracking number (8–40 letters and numbers).</span>
+                </div>
+              </div>
+              <div class="field" id="tracking-carrier-name-field" hidden>
+                <label class="field-label" for="tracking-carrier-name">Carrier name</label>
+                <input type="text" id="tracking-carrier-name" maxlength="40" autocomplete="off">
+                <span class="field-error" id="err-tracking-carrier-name" hidden>Please enter the carrier's name (40 characters max).</span>
+              </div>
+              <button type="button" class="btn btn-primary" id="btn-send-tracking">Send tracking number</button>
+              <p class="tracking-status" id="tracking-status" role="status" hidden></p>
+              <div id="tracking-recorded" hidden>
+                <p class="tracking-recorded-title">Tracking numbers we have:</p>
+                <ul class="tracking-list" id="tracking-list"></ul>
+              </div>
+            </div>
           </div>
         </div>
         <div class="step-item">
@@ -1394,6 +1442,8 @@
     server: "Something went wrong on our end. Please try again, or email " + CONTACT_EMAIL + " if it keeps happening.",
     network: "We couldn't reach the form service. Check your connection and try again.",
     not_available: "This form is opened from the link in your order email.",
+    not_submitted: "We don't have a prep form for this order yet, so there is nothing to add a tracking number to.",
+    tracking_limit: "We already have 10 tracking numbers for this order.",
     unknown_api: "Something went wrong on our end. Please try again."
   };
   // Errors the customer can fix by trying again need no contact line; every other error blocks them.
@@ -2708,6 +2758,7 @@
    */
   function updateSummary() {
     setDoneVariant(false);
+    setTrackingTarget(currentOrder && currentOrder.orderId, currentOrder && currentOrder.conf, []);
     var editsNotIncluded = !!(lastSubmissionResponse && lastSubmissionResponse.editsNotIncluded);
     var rows = rowsContainer.querySelectorAll('.row-card');
     var serverCount = lastSubmissionResponse && lastSubmissionResponse.cardCount;
@@ -2815,6 +2866,163 @@
       // Nothing reached the clipboard here, so the button must not say "Copied".
       marked('Address selected');
     }
+  });
+
+  // ---- Tracking number (screen 6 step 6) ----------------------------------
+  // The order screen 6 is about. The box is not part of the draft or the submit payload.
+  var trackingTarget = null; // {orderId, conf}
+  var TRACKING_CARRIER_VALUES = ['usps', 'ups', 'fedex', 'dhl', 'other'];
+  // The same rules as the server's validateTracking_ (the server is the one that decides).
+  var TRACKING_NUMBER_PATTERN = /^[A-Z0-9]{8,40}$/;
+  var MAX_CARRIER_NAME_LEN = 40;
+  // Server field name -> [input id, error id].
+  var TRACKING_FIELD_UI = {
+    carrier: ['tracking-carrier', 'err-tracking-carrier'],
+    carrierName: ['tracking-carrier-name', 'err-tracking-carrier-name'],
+    trackingNumber: ['tracking-number', 'err-tracking-number']
+  };
+
+  /** @param {*} value @return {string} Spaces and hyphens out, upper case — what the server stores. */
+  function normaliseTrackingNumber(value) {
+    return typeof value === 'string' ? value.replace(/[\s-]/g, '').toUpperCase() : '';
+  }
+
+  /**
+   * Points the box at an order and shows what is already recorded; empties the inputs and the status.
+   * @param {?string} orderId
+   * @param {?string} conf
+   * @param {*} entries The server's `tracking` list ([{carrier, number, at}]).
+   * @return {void}
+   */
+  function setTrackingTarget(orderId, conf, entries) {
+    trackingTarget = orderId && conf ? { orderId: orderId, conf: conf } : null;
+    document.getElementById('tracking-box').hidden = !trackingTarget;
+    document.getElementById('tracking-carrier').value = '';
+    document.getElementById('tracking-number').value = '';
+    document.getElementById('tracking-carrier-name').value = '';
+    document.getElementById('tracking-carrier-name-field').hidden = true;
+    clearTrackingErrors();
+    showTrackingStatus('', false);
+    renderTrackingList(entries);
+  }
+
+  /** @param {*} entries @return {void} */
+  function renderTrackingList(entries) {
+    var list = document.getElementById('tracking-list');
+    list.textContent = '';
+    var usable = Array.isArray(entries) ? entries : [];
+    if (!Array.isArray(entries)) console.error('The form service sent no tracking list.', entries);
+    usable.forEach(function (entry) {
+      var li = document.createElement('li');
+      var when = formatLocalDateTime(entry.at);
+      li.textContent = entry.carrier + ' ' + entry.number + (when ? ' — ' + when : '');
+      list.appendChild(li);
+    });
+    document.getElementById('tracking-recorded').hidden = usable.length === 0;
+  }
+
+  /** @param {string} text '' hides the line. @param {boolean} isError @return {void} */
+  function showTrackingStatus(text, isError) {
+    var el = document.getElementById('tracking-status');
+    renderMessage(el, text);
+    el.classList.toggle('is-error', isError);
+    el.hidden = text === '';
+  }
+
+  /**
+   * Locks the whole box while a send is in flight, so nothing typed meanwhile is cleared or lost
+   * when the answer arrives.
+   * @param {boolean} busy
+   * @return {void}
+   */
+  function setTrackingBusy(busy) {
+    ['tracking-carrier', 'tracking-number', 'tracking-carrier-name', 'btn-send-tracking'].forEach(function (id) {
+      document.getElementById(id).disabled = busy;
+    });
+    document.getElementById('btn-send-tracking').textContent = busy ? 'Sending…' : 'Send tracking number';
+  }
+
+  /** @return {void} */
+  function clearTrackingErrors() {
+    Object.keys(TRACKING_FIELD_UI).forEach(function (key) {
+      setError(TRACKING_FIELD_UI[key][0], TRACKING_FIELD_UI[key][1], false);
+    });
+  }
+
+  /** @return {string[]} The server field names that fail, the same checks as validateTracking_. */
+  function checkTracking() {
+    var fields = [];
+    var carrier = document.getElementById('tracking-carrier').value;
+    if (TRACKING_CARRIER_VALUES.indexOf(carrier) === -1) fields.push('carrier');
+    if (carrier === 'other') {
+      var name = document.getElementById('tracking-carrier-name').value.trim();
+      if (name === '' || name.length > MAX_CARRIER_NAME_LEN) fields.push('carrierName');
+    }
+    if (!TRACKING_NUMBER_PATTERN.test(normaliseTrackingNumber(document.getElementById('tracking-number').value))) fields.push('trackingNumber');
+    return fields;
+  }
+
+  /** @param {string[]} fields Server field names. @return {void} */
+  function markTrackingFields(fields) {
+    fields.forEach(function (key) {
+      var ui = TRACKING_FIELD_UI[key];
+      if (ui) setError(ui[0], ui[1], true);
+      else console.error('Unknown tracking field from the form service:', key);
+    });
+  }
+
+  document.getElementById('tracking-carrier').addEventListener('change', function () {
+    var isOther = this.value === 'other';
+    document.getElementById('tracking-carrier-name-field').hidden = !isOther;
+    if (!isOther) setError('tracking-carrier-name', 'err-tracking-carrier-name', false);
+    if (this.value !== '') setError('tracking-carrier', 'err-tracking-carrier', false);
+  });
+  clearErrorOnInput('tracking-number', 'err-tracking-number');
+  clearErrorOnInput('tracking-carrier-name', 'err-tracking-carrier-name');
+
+  document.getElementById('btn-send-tracking').addEventListener('click', function () {
+    if (!trackingTarget) return;
+    clearTrackingErrors();
+    var failing = checkTracking();
+    if (failing.length > 0) {
+      markTrackingFields(failing);
+      showTrackingStatus(errorText('validation', null), true);
+      return;
+    }
+    var carrier = document.getElementById('tracking-carrier').value;
+    var target = trackingTarget;
+    var carrierName = carrier === 'other' ? document.getElementById('tracking-carrier-name').value.trim() : '';
+    var trackingNumber = document.getElementById('tracking-number').value;
+    setTrackingBusy(true);
+    showTrackingStatus('', false);
+    apiPost({
+      api: 'tracking',
+      order: target.orderId,
+      conf: target.conf,
+      carrier: carrier,
+      carrierName: carrierName,
+      trackingNumber: trackingNumber
+    }).then(function (res) {
+      if (trackingTarget !== target) return; // the page moved to another order meanwhile
+      if (res && res.ok === true) {
+        renderTrackingList(res.tracking);
+        if (res.added === true) {
+          document.getElementById('tracking-number').value = '';
+          showTrackingStatus('Thanks — we have your tracking number.', false);
+        } else {
+          showTrackingStatus('We already have that tracking number.', false);
+        }
+        return;
+      }
+      var code = res && res.error;
+      if (code === 'validation' && Array.isArray(res.fields)) markTrackingFields(res.fields);
+      showTrackingStatus(errorText(code, res && res.message), true);
+    }, function (err) {
+      console.error('Sending the tracking number failed.', err);
+      if (trackingTarget === target) showTrackingStatus(errorText('network', null), true);
+    }).then(function () {
+      setTrackingBusy(false);
+    });
   });
 
   // ---- Order lookup / prefill -------------------------------------------
@@ -2962,6 +3170,7 @@
     document.getElementById('btn-submit-again').hidden = !canResubmit;
     document.getElementById('btn-start-over').hidden = (mode !== 'test');
     renderShipTo(order.shipTo);
+    setTrackingTarget(orderId, conf, order.tracking);
     showView('submitted');
   }
 
