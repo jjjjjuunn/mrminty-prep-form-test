@@ -2582,9 +2582,14 @@
 
   var submitInFlight = false;
 
-  /** @param {*} res @return {boolean} true when the server's answer is a readable {ok: boolean, ...} object. */
+  /**
+   * Google's web app now and then hands a POST the answer to an empty GET ('unknown_api') after the
+   * script has run the POST (run 15, 10/24), so that answer is treated as lost, not as a refusal.
+   * @param {*} res
+   * @return {boolean} true when the server's answer is a readable {ok: boolean, ...} object that answers this request.
+   */
   function isSubmitResponse(res) {
-    return !!res && typeof res === 'object' && typeof res.ok === 'boolean';
+    return !!res && typeof res === 'object' && typeof res.ok === 'boolean' && res.error !== 'unknown_api';
   }
 
   /**
@@ -2875,6 +2880,10 @@
   // The same rules as the server's validateTracking_ (the server is the one that decides).
   var TRACKING_NUMBER_PATTERN = /^[A-Z0-9]{8,40}$/;
   var MAX_CARRIER_NAME_LEN = 40;
+  // Answers that may hide a number the server did record: Google's web app can hand a POST the answer
+  // to an empty GET (run 15, 10/24), and a server error may come after the row was written.
+  var TRACKING_RECHECK_CODES = ['unknown_api', 'server'];
+  var TRACKING_UNCONFIRMED_MESSAGE = "We couldn't confirm we got your tracking number. Sending it again is safe — it won't be added twice.";
   // Server field name -> [input id, error id].
   var TRACKING_FIELD_UI = {
     carrier: ['tracking-carrier', 'err-tracking-carrier'],
@@ -2933,13 +2942,66 @@
    * Locks the whole box while a send is in flight, so nothing typed meanwhile is cleared or lost
    * when the answer arrives.
    * @param {boolean} busy
+   * @param {string=} label The button text while busy (default "Sending…").
    * @return {void}
    */
-  function setTrackingBusy(busy) {
+  function setTrackingBusy(busy, label) {
     ['tracking-carrier', 'tracking-number', 'tracking-carrier-name', 'btn-send-tracking'].forEach(function (id) {
       document.getElementById(id).disabled = busy;
     });
-    document.getElementById('btn-send-tracking').textContent = busy ? 'Sending…' : 'Send tracking number';
+    document.getElementById('btn-send-tracking').textContent = busy ? (label || 'Sending…') : 'Send tracking number';
+  }
+
+  /**
+   * Reads the order (api=order) up to three times, about 1 s, 2 s and 4 s apart, and looks for this
+   * carrier and number in its tracking list. A failed or unusable read does not end the check.
+   * @param {{orderId: string, conf: string}} target
+   * @param {string} carrierLabel The name the server stores: USPS, UPS, FedEx, DHL or the typed name.
+   * @param {string} number Normalised.
+   * @return {Promise<?Array>} The order's tracking list once the number is in it, else null.
+   */
+  function confirmTrackingViaOrder(target, carrierLabel, number) {
+    var attempt = 0;
+    function next() {
+      if (attempt >= STATUS_RETRY_DELAYS_MS.length) return Promise.resolve(null);
+      var delay = STATUS_RETRY_DELAYS_MS[attempt];
+      attempt++;
+      return wait(delay).then(function () {
+        return apiGet('order', { order: target.orderId, conf: target.conf });
+      }).then(function (res) {
+        var list = res && res.ok === true && res.order ? res.order.tracking : null;
+        var found = Array.isArray(list) && list.some(function (entry) {
+          return entry.carrier === carrierLabel && entry.number === number;
+        });
+        return found ? list : next();
+      }, function (err) {
+        console.warn('Tracking check failed:', err);
+        return next();
+      });
+    }
+    return next();
+  }
+
+  /**
+   * The answer to show for a tracking send. A success and the server's clear refusals pass straight
+   * through; a lost or unreadable answer (null) or one of TRACKING_RECHECK_CODES is checked against
+   * the order's tracking list first ("Checking…"), since the server may have recorded the number.
+   * @param {*} res The parsed answer, or null when the request failed or could not be read.
+   * @param {{orderId: string, conf: string}} target
+   * @param {string} carrierLabel
+   * @param {string} number Normalised.
+   * @return {Promise<Object>} {ok: true, ...} (`confirmed: true` when found by the check) or {ok: false, error, message}.
+   */
+  function settleTrackingAnswer(res, target, carrierLabel, number) {
+    var readable = !!res && typeof res === 'object' && typeof res.ok === 'boolean';
+    if (readable && (res.ok || TRACKING_RECHECK_CODES.indexOf(res.error) === -1)) return Promise.resolve(res);
+    console.warn('Checking a doubtful tracking answer:', res);
+    setTrackingBusy(true, 'Checking…');
+    return confirmTrackingViaOrder(target, carrierLabel, number).then(function (list) {
+      if (list) return { ok: true, confirmed: true, tracking: list };
+      if (readable && res.error === 'server') return res;
+      return { ok: false, error: 'unconfirmed', message: TRACKING_UNCONFIRMED_MESSAGE };
+    });
   }
 
   /** @return {void} */
@@ -2989,10 +3051,14 @@
       showTrackingStatus(errorText('validation', null), true);
       return;
     }
-    var carrier = document.getElementById('tracking-carrier').value;
+    var carrierSelect = document.getElementById('tracking-carrier');
+    var carrier = carrierSelect.value;
     var target = trackingTarget;
     var carrierName = carrier === 'other' ? document.getElementById('tracking-carrier-name').value.trim() : '';
+    // What the server stores and lists: the option's text (USPS, ...) or the typed name for Other.
+    var carrierLabel = carrier === 'other' ? carrierName : carrierSelect.options[carrierSelect.selectedIndex].textContent;
     var trackingNumber = document.getElementById('tracking-number').value;
+    var number = normaliseTrackingNumber(trackingNumber);
     setTrackingBusy(true);
     showTrackingStatus('', false);
     apiPost({
@@ -3003,10 +3069,15 @@
       carrierName: carrierName,
       trackingNumber: trackingNumber
     }).then(function (res) {
+      return settleTrackingAnswer(res, target, carrierLabel, number);
+    }, function (err) {
+      console.warn('Sending the tracking number failed:', err);
+      return settleTrackingAnswer(null, target, carrierLabel, number);
+    }).then(function (res) {
       if (trackingTarget !== target) return; // the page moved to another order meanwhile
-      if (res && res.ok === true) {
+      if (res.ok === true) {
         renderTrackingList(res.tracking);
-        if (res.added === true) {
+        if (res.added === true || res.confirmed === true) {
           document.getElementById('tracking-number').value = '';
           showTrackingStatus('Thanks — we have your tracking number.', false);
         } else {
@@ -3014,12 +3085,8 @@
         }
         return;
       }
-      var code = res && res.error;
-      if (code === 'validation' && Array.isArray(res.fields)) markTrackingFields(res.fields);
-      showTrackingStatus(errorText(code, res && res.message), true);
-    }, function (err) {
-      console.error('Sending the tracking number failed.', err);
-      if (trackingTarget === target) showTrackingStatus(errorText('network', null), true);
+      if (res.error === 'validation' && Array.isArray(res.fields)) markTrackingFields(res.fields);
+      showTrackingStatus(errorText(res.error, res.message), true);
     }).then(function () {
       setTrackingBusy(false);
     });
