@@ -355,7 +355,7 @@
 
   .option-list { display: grid; gap: 10px; margin-top: 10px; }
   /* Three across (two for CONSIGNMENT). The option boxes in a row stretch to the same height, like the
-     screen 1 tiles (Russell 10/18). */
+     screen 1 tiles. */
   @media (min-width: 860px) {
     .option-list { grid-template-columns: repeat(3, 1fr); }
     .option-list.cols-2 { grid-template-columns: repeat(2, 1fr); }
@@ -363,7 +363,7 @@
   .option-card { position: relative; display: flex; flex-direction: column; }
   .option-card > label { flex: 1; }
   /* No visible checkbox: the card itself shows the choice, with a tick when selected, like the screen 1
-     tiles (Russell 10/18). The checkbox stays in place for the keyboard and screen readers; clicks go
+     tiles. The checkbox stays in place for the keyboard and screen readers; clicks go
      through the label. */
   .option-card > input {
     position: absolute;
@@ -470,7 +470,7 @@
     .tile-grid { grid-template-columns: repeat(3, 1fr); }
   }
   /* Flex so the label box fills its grid cell: every tile in a row is as tall as the tallest one
-     (the two-line Freshy tile was taller than its neighbours — Russell 10/18). */
+     (the two-line Freshy tile was taller than its neighbours). */
   .tile { position: relative; display: flex; }
   .tile input { position: absolute; opacity: 0; width: 100%; height: 100%; top: 0; left: 0; margin: 0; cursor: pointer; }
   .tile label {
@@ -1756,7 +1756,7 @@
   document.getElementById('country').addEventListener('input', applyCountryRules);
 
   /**
-   * Same rule as the server's isPlausiblePhone_: 10-15 digits, other characters ignored (Russell 10/18).
+   * Same rule as the server's isPlausiblePhone_: 10-15 digits, other characters ignored.
    * @param {string} value
    * @return {boolean}
    */
@@ -2812,7 +2812,7 @@
       var sel = window.getSelection();
       sel.removeAllRanges();
       sel.addRange(range);
-      // Nothing reached the clipboard here, so the button must not say "Copied" (Codex review 10/18).
+      // Nothing reached the clipboard here, so the button must not say "Copied".
       marked('Address selected');
     }
   });
