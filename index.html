@@ -742,10 +742,15 @@
     background: var(--color-surface);
   }
   .tracking-box .btn { justify-self: start; }
-  .step-item .tracking-status { color: var(--color-ink); }
-  .step-item .tracking-status.is-error { color: var(--color-danger); font-weight: 600; }
+  .tracking-box p { margin: 0; font-size: 13.5px; color: var(--color-ink-muted); line-height: 1.5; }
+  .tracking-box .tracking-status { color: var(--color-ink); }
+  .tracking-box .tracking-status.is-error { color: var(--color-danger); font-weight: 600; }
+  /* Opened again with the link: the box sits in this card under the heading, not 2+ screens down in step 6. */
+  .tracking-top { margin-bottom: 26px; border-color: var(--color-accent); }
+  .tracking-top-title { margin: 0; font-size: 16px; }
+  .tracking-top .tracking-box { margin-top: 10px; padding: 0; border: 0; }
   .tracking-recorded-title { font-weight: 700; }
-  .tracking-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; word-break: break-all; }
+  .tracking-list { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 4px; font-size: 13.5px; overflow-wrap: anywhere; }
 
   .done-footer {
     border-top: 1px solid var(--color-border);
@@ -1245,6 +1250,11 @@
         <p class="done-sub" id="done-sub" hidden></p>
       </div>
 
+      <!-- Opened again with the order's link (the reminder email links here): setDoneVariant moves the tracking box up into this card. -->
+      <div class="card tracking-top" id="tracking-top" hidden>
+        <h2 class="tracking-top-title">Add your tracking number</h2>
+      </div>
+
       <p class="summary-card card" id="summary-line"></p>
 
       <h2 class="section-heading">What happens next</h2>
@@ -1312,7 +1322,7 @@
         </div>
         <div class="step-item">
           <span class="step-num">6</span>
-          <div>
+          <div id="step-6-body">
             <h3>Provide us your tracking number for incoming shipments.</h3>
             <ul class="checklist">
               <li><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true"><path d="M4 12l6 6L20 6"></path></svg><span>After you ship, open your prep form link again and enter the carrier and tracking number.</span></li>
@@ -2740,10 +2750,15 @@
 
   /**
    * Screen 6 has two variants: the thank-you after a submit, and "we already have your form".
+   * The second one is what the order's link opens after the form is in (the reminder email links
+   * there), so its tracking box sits in a card under the heading; the thank-you keeps it in step 6.
    * @param {boolean} already
    * @return {void}
    */
   function setDoneVariant(already) {
+    var trackingTop = document.getElementById('tracking-top');
+    (already ? trackingTop : document.getElementById('step-6-body')).appendChild(document.getElementById('tracking-box'));
+    trackingTop.hidden = !already;
     document.getElementById('summary-line').hidden = already;
     document.getElementById('sent-to-line').hidden = already;
     document.getElementById('done-questions').hidden = already;
